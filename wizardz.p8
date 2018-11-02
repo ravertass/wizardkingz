@@ -5,32 +5,44 @@ __lua__
 -- a spooky game jam game
 
 function _init()
-  pl1 = new_player()
+  pl1 = new_player1()
+  pl2 = new_player2()
 end
 
-function new_player()
+function new_player1()
   return {
     x = 10,
     y = 10,
-    spr = 001
+    spr = 001,
+    no = 0
+  }
+end
+
+function new_player2()
+  return {
+    x = 100,
+    y = 10,
+    spr = 002,
+    no = 1
   }
 end
 
 function _update()
   update_player(pl1)
+  update_player(pl2)
 end
 
 function update_player(pl)
-  if btn(0) then
+  if btn(0, pl.no) then
     pl.x = pl.x-1
   end
-  if btn(1) then
+  if btn(1, pl.no) then
     pl.x = pl.x+1
   end
-  if btn(2) then
+  if btn(2, pl.no) then
     pl.y = pl.y-1
   end
-  if btn(3) then
+  if btn(3, pl.no) then
     pl.y = pl.y+1
   end
 end
@@ -38,6 +50,7 @@ end
 function _draw()
   cls()
   draw_entity(pl1)
+  draw_entity(pl2)
 end
 
 function draw_entity(e)
