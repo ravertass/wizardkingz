@@ -4,7 +4,11 @@ __lua__
 -- kingz of wizardz
 -- a spooky game jam game
 
+---- constants ----
+
 skeltal_sprs = {064, 065}
+
+---- init ----
 
 function _init()
   pl1 = new_player1()
@@ -42,17 +46,12 @@ function new_skeltal()
   }
 end
 
-function update_skeltal_spr(e)
-  if e.spr == skeltal_sprs[1] then
-    e.spr = skeltal_sprs[2]
-  else
-    e.spr = skeltal_sprs[1]
-  end
-end
+---- update ----
 
 function _update()
   update_player(pl1)
   update_player(pl2)
+  foreach(enemies, update_entity)
 end
 
 function update_player(pl)
@@ -70,12 +69,35 @@ function update_player(pl)
   end
 end
 
+function update_entity(e)
+  if e.type == "skeltal" then
+    update_skeltal(e)
+  end
+end
+
+function update_skeltal(s)
+  if rnd(3) > 2 then
+    s.x = s.x + rnd(3) - 1.5
+    s.y = s.y + rnd(3) - 1.5
+  end
+end
+
+---- draw ----
+
 function _draw()
   cls()
   draw_entity(pl1)
   draw_entity(pl2)
   foreach(enemies, draw_entity)
   foreach(enemies, update_skeltal_spr)
+end
+
+function update_skeltal_spr(e)
+  if e.spr == skeltal_sprs[1] then
+    e.spr = skeltal_sprs[2]
+  else
+    e.spr = skeltal_sprs[1]
+  end
 end
 
 function draw_entity(e)
