@@ -7,6 +7,10 @@ __lua__
 function _init()
   pl1 = new_player1()
   pl2 = new_player2()
+  enemies = {}
+  add(enemies, new_skeltal())
+  add(enemies, new_skeltal())
+  add(enemies, new_skeltal())
 end
 
 function new_player1()
@@ -24,6 +28,15 @@ function new_player2()
     y = 10,
     spr = 002,
     no = 1
+  }
+end
+
+function new_skeltal()
+  return {
+    x = rnd(128),
+    y = rnd(128),
+    type = "skeltal",
+    spr = 064
   }
 end
 
@@ -51,6 +64,7 @@ function _draw()
   cls()
   draw_entity(pl1)
   draw_entity(pl2)
+  foreach(enemies, draw_entity)
 end
 
 function draw_entity(e)
