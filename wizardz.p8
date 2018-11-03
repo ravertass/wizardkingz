@@ -27,11 +27,11 @@ local startscreen_game_time = nil
 function _init()
   pl1 = new_player1()
   pl2 = new_player2()
-  enemies = {}
+  skeltals = {}
   projectiles = {}
-  add(enemies, new_skeltal())
-  add(enemies, new_skeltal())
-  add(enemies, new_skeltal())
+  add(skeltals, new_skeltal())
+  add(skeltals, new_skeltal())
+  add(skeltals, new_skeltal())
   init_startscreen()
   music(c_song_1)
 end
@@ -125,7 +125,7 @@ function _update()
   if mode == 1 then
     update_player(pl1)
     update_player(pl2)
-    foreach(enemies, update_entity)
+    foreach(skeltals, update_entity)
     foreach(projectiles, update_entity)
   end
 end
@@ -208,6 +208,60 @@ function move(e)
   e.y += dy
 end
 
+function fireball_collision(fireball)
+  for i = 1, #skeltals do
+    skeltal = skeltals[i]
+    if intersect(
+      skeltal_rect(skeltal),
+      {fireball.x+1, fireball.y+2,
+        fireball.x+6, fireball.y+6})
+    then
+      del(skeltals, skeltal)
+      del(projectiles, fireball)
+      add(skeltals, new_skeltal())
+      add(skeltals, new_skeltal())
+      return
+    end
+  end
+end
+
+function skeltal_rect(s)
+  return {
+    s.x+1, s.y+1,
+    s.x+6, s.y+9
+  }
+end
+
+function intersect(rect1,rect2)
+  return
+    rect_in_rect(rect1, rect2)
+    or
+    rect_in_rect(rect2, rect1)
+end
+
+function rect_in_rect(rect1, rect2)
+  return
+    point_intersect(
+      rect1[1], rect1[2], rect2)
+    or
+    point_intersect(
+      rect1[1], rect1[4], rect2)
+    or
+    point_intersect(
+      rect1[3], rect1[2], rect2)
+    or
+    point_intersect(
+      rect1[3], rect1[4], rect2)
+end
+
+function point_intersect(x, y, rect2)
+  return
+    x >= rect2[1] and
+    x <= rect2[3] and
+    y >= rect2[2] and
+    y <= rect2[4]
+end
+
 function update_entity(e)
   if e.type == "skeltal" then
     update_skeltal(e)
@@ -227,6 +281,9 @@ end
 function update_projectile(f)
   f.x += f.vel.x
   f.y += f.vel.y
+  if f.projectile_type == 'fireball' then
+    fireball_collision(f)
+  end
 end
 
 function add_timer (name,
@@ -291,8 +348,8 @@ function _draw()
     cls()
     draw_entity(pl1)
     draw_entity(pl2)
-    foreach(enemies, draw_entity)
-    foreach(enemies, skeltal_chew)
+    foreach(skeltals, draw_entity)
+    foreach(skeltals, skeltal_chew)
     foreach(projectiles, draw_entity)
     foreach(projectiles, update_projectile_spr)
   end
