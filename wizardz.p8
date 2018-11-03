@@ -4,6 +4,14 @@ __lua__
 -- kingz of wizardz
 -- a spooky game jam game
 
+function sign(num)
+  if num == 0 then
+    return 0
+  else
+    return sgn(num)
+  end
+end
+
 ---- diagnostics ----
 
 c_perf_names = {"update", "draw"}
@@ -70,6 +78,9 @@ pl1_idle = {011, 012}
 pl1_idle_up = {027, 028}
 pl1_idle_side = {043, 044}
 
+pl_acc = 0.3
+pl_max_vel_squared = 1
+
 anim_count = 0
 c_max_health = 100
 
@@ -99,6 +110,11 @@ function new_player1()
     spr = 011,
     spr_ix = 1,
     no = 0,
+    friction = 0.2,
+    acc = {
+      x = 0,
+      y = 0
+    },
     vel = {
       x = 0,
       y = 0
@@ -123,6 +139,11 @@ function new_player2()
     spr = 011,
     spr_ix = 1,
     no = 1,
+    friction = 0.1,
+    acc = {
+      x = 0,
+      y = 0
+    },
     vel = {
       x = 0,
       y = 0
@@ -229,27 +250,22 @@ end
 
 function update_player(pl)
   if btn(0, pl.no) then
-    pl.vel.x = -1
+    pl.acc.x = -pl_acc
   elseif btn(1, pl.no) then
-    pl.vel.x = 1
+    pl.acc.x = pl_acc
   else
-    pl.vel.x = 0
+    pl.acc.x = 0
   end
-  pl.x = pl.x + pl.vel.x
 
   if btn(2, pl.no) then
-    pl.vel.y = -1
+    pl.acc.y = -pl_acc
   elseif btn(3, pl.no) then
-    pl.vel.y = 1
+    pl.acc.y = pl_acc
   else
-    pl.vel.y = 0
+    pl.acc.y = 0
   end
-  pl.y = pl.y + pl.vel.y
 
-  if pl.vel.x != 0 or pl.vel.y != 0 then
-    pl.dir.x = pl.vel.x
-    pl.dir.y = pl.vel.y
-  end
+  update_player_pos(pl)
 
   if btn(4, pl.no) then
     if not pl.did_shoot then
@@ -266,6 +282,37 @@ end
 
 function update_invincibility(pl)
   pl.invincibility_counter = max(0, pl.invincibility_counter - 1)
+end
+
+function update_player_pos(pl)
+  friction_x = sign(pl.vel.x) * pl.friction
+  friction_y = sign(pl.vel.y) * pl.friction
+  if sign(pl.vel.x) != sign(pl.vel.x - friction_x) then
+    pl.vel.x = 0
+  else
+    pl.vel.x -= friction_x
+  end
+  if sign(pl.vel.y) != sign(pl.vel.y - friction_y) then
+    pl.vel.y = 0
+  else
+    pl.vel.y -= friction_y
+  end
+  pl.vel.x += pl.acc.x
+  pl.vel.y += pl.acc.y
+
+  if pl.vel.x * pl.vel.x + pl.vel.y * pl.vel.y > pl_max_vel_squared then
+    a = atan2(pl.vel.x, pl.vel.y)
+    pl.vel.x = cos(a)
+    pl.vel.y = sin(a)
+  end
+
+  pl.x = pl.x + pl.vel.x
+  pl.y = pl.y + pl.vel.y
+
+  if pl.vel.x != 0 or pl.vel.y != 0 then
+    pl.dir.x = sign(pl.vel.x)
+    pl.dir.y = sign(pl.vel.y)
+  end
 end
 
 function player_collisions(pl)
@@ -649,14 +696,8 @@ function add_particle(e)
   alpha_0 = atan2(-e.vel.x, -e.vel.y)
   alpha = alpha_0 + rnd(0.15) - 0.075
 
-  proj_front_x = 4
-  if e.vel.x != 0 then
-    proj_front_x += 4 * sgn(e.vel.x)
-  end
-  proj_front_y = 4
-  if e.vel.y != 0 then
-    proj_front_y += 4 * sgn(e.vel.y)
-  end
+  proj_front_x = 4 + 4 * sign(e.vel.x)
+  proj_front_y = 4 + 4 * sign(e.vel.y)
 
   x_offs = cos(alpha)
   y_offs = sin(alpha)
