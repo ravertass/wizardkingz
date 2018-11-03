@@ -102,6 +102,8 @@ function new_projectile(x, y, vel, _type)
     projectile_type = _type,
     spr = projectile_sprs[_type][1],
     spr_ix = 1,
+    size = 8,
+    size_dx = 1,
     flip_x = false,
     flip_y = false
   }
@@ -316,6 +318,12 @@ function update_projectile_spr(e)
   if e.vel.x == 0 then
     e.spr += 16
   end
+  e.size += e.size_dx
+  if e.size >= 10 then
+    e.size_dx = -1
+  elseif e.size <= 7 then
+    e.size_dx = 1
+  end
 end
 
 function update_player_spr(e, anim)
@@ -342,7 +350,11 @@ function draw_skeltal(e)
 end
 
 function draw_projectile(e)
-  spr(e.spr, e.x, e.y, 1, 1, e.flip_x, e.flip_y)
+  spr_x = flr(e.spr % 16) * 8
+  spr_y = flr(e.spr / 16) * 8
+  pos_x = e.x - ((e.size - 8) / 2)
+  pos_y = e.y - ((e.size - 8) / 2)
+  sspr(spr_x, spr_y, 8, 8, pos_x, pos_y, e.size, e.size, e.flip_x, e.flip_y)
 end
 
 
