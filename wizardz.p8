@@ -73,6 +73,7 @@ sfx_shoot = {
 }
 sfx_expl = 22
 sfx_ouch = 23
+sfx_mana_punishment = 23
 
 --[[ pl1_run_down = {013, 014}
 pl1_run_side = {045, 046}
@@ -88,6 +89,7 @@ projectile_max_vel = 3
 
 anim_count = 0
 c_max_health = 100
+c_max_mana = 100
 
 fence_sprs = {192, 193, 194, 195}
 
@@ -130,7 +132,9 @@ function new_player1()
       y = 0
     },
     projectile_type = "fireball",
-    did_shoot = false,
+    shoot_counter = 10,
+    mana = c_max_mana,
+    mana_punishment_counter = 0,
     health = c_max_health,
     invincibility_counter = 60,
     flip_pl = false,
@@ -165,7 +169,9 @@ function new_player2()
       y = 0
     },
     projectile_type = "lightning_ball",
-    did_shoot = false,
+    shoot_counter = 10,
+    mana = c_max_mana,
+    mana_punishment_counter = 0,
     health = c_max_health,
     invincibility_counter = 60,
     flip_pl = false,
@@ -298,18 +304,29 @@ function update_player(pl)
   end
 
   update_player_pos(pl)
-
-  if btn(4, pl.no) then
-    if not pl.did_shoot then
-      shoot_fireball(pl)
-      pl.did_shoot = true
-    end
-  else
-    pl.did_shoot = false
-  end
-
+  handle_magic(pl)
   update_invincibility(pl)
   player_collisions(pl)
+end
+
+function handle_magic(pl)
+  pl.shoot_counter = max(0, pl.shoot_counter - 1)
+  if pl.mana_punishment_counter > 0 then
+    pl.mana_punishment_counter -= 1
+  else
+    pl.mana = min(c_max_mana, pl.mana + 0.5)
+    if btn(4, pl.no) and pl.shoot_counter == 0 and pl.mana > 10 then
+      shoot_fireball(pl)
+      pl.mana -= 20
+      pl.shoot_counter = 10
+
+      if pl.mana < 0 then
+        pl.mana = 0
+        pl.mana_punishment_counter = 60
+        sfx(sfx_mana_punishment)
+      end
+    end
+  end
 end
 
 function update_invincibility(pl)
@@ -569,6 +586,7 @@ function draw_gamescreen()
   foreach(skeltals, skeltal_chew)
   foreach(projectiles, draw_entity)
   foreach(projectiles, update_projectile_spr)
+  draw_manabars()
   draw_healthbars()
 end
 
@@ -701,6 +719,31 @@ function add_particle(e)
   pset(x, y, 7)
 end
 
+function draw_manabars()
+  draw_manabar(pl1, 8)
+  draw_manabar(pl2, 80)
+end
+
+function draw_manabar(pl, x)
+  local col = manabar_color(pl.mana, pl.mana_punishment_counter)
+  local x_end = x + (pl.mana/c_max_mana)*40
+  if (pl.mana_punishment_counter % 4) == 0 then
+    rectfill(x, 120, x_end, 121, col)
+  end
+end
+
+function manabar_color(mana, punishment_counter)
+  if punishment_counter > 0 then
+    return 14
+  elseif mana > ((2*c_max_mana)/3) then
+    return 12
+  elseif mana > (c_max_mana/3) then
+    return 13
+  else
+    return 1
+  end
+end
+
 function draw_healthbars()
   print("p1", 52, 120, 12)
   draw_healthbar(pl1, 8)
@@ -711,7 +754,7 @@ end
 function draw_healthbar(pl, x)
   local col = healthbar_color(pl.health)
   local x_end = x + (pl.health/c_max_health)*40
-  rectfill(x, 120, x_end, 124, col)
+  rectfill(x, 122, x_end, 124, col)
 end
 
 function healthbar_color(health)
@@ -724,7 +767,7 @@ function healthbar_color(health)
   end
 end
 
-function draw_fences() 
+function draw_fences()
 ---- corners ----
   spr(fence_sprs[4], 0, 0, 1, 1, true, false)
   spr(fence_sprs[4], 120, 0, 1, 1, false, false)
