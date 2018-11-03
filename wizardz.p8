@@ -25,6 +25,8 @@ pl1_run_side = {045, 046}
 pl1_run_up = {029, 030}
 pl1_idle = {011, 012}
 
+anim_count = 0
+
 ---- init ----
 local timers = {}
 local startscreen_game_time = nil
@@ -133,6 +135,7 @@ function _update()
   end
   ---- gamescreen ----
   if mode == 1 then
+    count()
     update_player(pl1)
     update_player(pl2)
     foreach(skeltals, update_entity)
@@ -151,6 +154,13 @@ function create_startscreen_countdown()
       startscreen_game_init = false
     end
   )
+end
+
+function count()
+  anim_count += 1
+  if anim_count == 30 then
+    anim_count = 0
+  end
 end
 
 function update_player(pl)
@@ -353,10 +363,12 @@ function _draw()
 end
 
 function skeltal_chew(e)
-  if e.spr == skeltal_sprs[1] then
-    e.spr = skeltal_sprs[2]
-  else
-    e.spr = skeltal_sprs[1]
+  if anim_count % 2 == 0 then
+    if e.spr == skeltal_sprs[1] then
+     e.spr = skeltal_sprs[2]
+    else
+      e.spr = skeltal_sprs[1]
+    end
   end
 end
 
@@ -397,16 +409,26 @@ end
 function draw_player(e)
   flip_pl = false
   if e.vel.x == 0 and e.vel.y == 0 then
-    animate_player(e, pl1_idle)
+    if anim_count % 6 == 0 then
+      animate_player(e, pl1_idle)
+    end
   elseif e.vel.x > 0 then
-    animate_player(e, pl1_run_side)
+    if anim_count % 2 == 0 then
+      animate_player(e, pl1_run_side)
+    end
   elseif e.vel.x < 0 then
     flip_pl = true
-    animate_player(e, pl1_run_side)
+    if anim_count % 2 == 0 then
+      animate_player(e, pl1_run_side)
+    end
   elseif e.vel.y > 0 then
-    animate_player(e, pl1_run_down)
+    if anim_count % 2 == 0 then
+      animate_player(e, pl1_run_down)
+    end
   elseif e.vel.y < 0 then
-    animate_player(e, pl1_run_up)
+    if anim_count % 2 == 0 then
+      animate_player(e, pl1_run_up)
+    end
   else
     e.spr = 001
   end
