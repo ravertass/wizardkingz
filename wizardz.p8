@@ -317,7 +317,7 @@ function handle_magic(pl)
   else
     pl.mana = min(c_max_mana, pl.mana + 0.5)
     if btn(4, pl.no) and pl.shoot_counter == 0 and pl.mana > 10 then
-      shoot_fireball(pl)
+      shoot_straight_fireball(pl)
       pl.mana -= 20
       pl.shoot_counter = 10
 
@@ -398,14 +398,18 @@ function kill_player(pl)
   -- todo: player should die
 end
 
-function shoot_fireball(pl)
+function shoot_fireball(x, y, vel, projectile_type)
+  clamp_velocity(vel, projectile_max_vel)
+  add(projectiles, new_projectile(x, y, vel, projectile_type))
+  sfx(sfx_shoot[projectile_type], 2)
+end
+
+function shoot_straight_fireball(pl)
   vel = {
     x = 3 * pl.dir.x,
     y = 3 * pl.dir.y,
   }
-  clamp_velocity(vel, projectile_max_vel)
-  add(projectiles, new_projectile(pl.x, pl.y, vel, pl.projectile_type))
-  sfx(sfx_shoot[pl.projectile_type], 2)
+  shoot_fireball(pl.x, pl.y, vel, pl.projectile_type)
 end
 
 function follow(target, e)
