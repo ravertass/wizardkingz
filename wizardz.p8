@@ -26,6 +26,7 @@ pl1_run_up = {029, 030}
 pl1_idle = {011, 012}
 
 anim_count = 0
+c_max_health = 100
 
 ---- init ----
 local timers = {}
@@ -60,7 +61,8 @@ function new_player1()
       y = 0
     },
     projectile_type = "fireball",
-    did_shoot = false
+    did_shoot = false,
+    health = 100
   }
 end
 
@@ -81,7 +83,8 @@ function new_player2()
       y = 0
     },
     projectile_type = "lightning_ball",
-    did_shoot = false
+    did_shoot = false,
+    health = c_max_health
   }
 end
 
@@ -299,7 +302,7 @@ function add_timer (name,
   return timer
 end
 
-function update_timers ()
+function update_timers()
   local t = time()
   local dt = t - startscreen_game_time
   startscreen_game_time = t
@@ -311,7 +314,7 @@ function update_timers ()
       if elapsed < length then
         if timer.step_fn then
           timer.step_fn(dt,elapsed,length,timer)
-        end  
+        end
       else
         if timer.end_fn then
           timer.end_fn(dt,elapsed,length,timer)
@@ -322,7 +325,7 @@ function update_timers ()
   end
 end
 
-function restart_timer (name, start_paused)
+function restart_timer(name, start_paused)
   local timer = timers[name]
   if (not timer) return
   timer.elapsed = 0
@@ -332,34 +335,40 @@ end
 ---- draw ----
 
 function _draw()
-  ---- startscreen ----
   if mode == 0 then
-    cls()
-    spr(skull_spr[1], 30, 20, 4, 4)
-    spr(skull_spr[1], 66, 20, 4, 4, true, false)
-    spr(skull_fx_sprs[skull_fx_index], 46, 12, 1, 1)
-    spr(skull_fx_sprs[skull_fx_index], 66, 12, 1, 1, true, false)
-    skull_fx_index += 1
-    if skull_fx_index > 3 then
-      skull_fx_index = 1
-    end
-    print("kingz of wizardz", 32, 60, 7)
-    if startscreen_game_timer_exists then
-      print("game starting in "..tostr(ceil(c_startscreen_timer_countdown_start - timers[c_startscreen_timer].elapsed)), 28, 90, 6)
-    else 
-      print("press x to start", 32, 90, 6)
-    end
+    draw_startscreen()
+  elseif mode == 1 then
+    draw_gamescreen()
   end
-  ---- gamescreen ----
-  if mode == 1 then
-    cls()
-    draw_entity(pl1)
-    draw_entity(pl2)
-    foreach(skeltals, draw_entity)
-    foreach(skeltals, skeltal_chew)
-    foreach(projectiles, draw_entity)
-    foreach(projectiles, update_projectile_spr)
+end
+
+function draw_startscreen()
+  cls()
+  spr(skull_spr[1], 30, 20, 4, 4)
+  spr(skull_spr[1], 66, 20, 4, 4, true, false)
+  spr(skull_fx_sprs[skull_fx_index], 46, 12, 1, 1)
+  spr(skull_fx_sprs[skull_fx_index], 66, 12, 1, 1, true, false)
+  skull_fx_index += 1
+  if skull_fx_index > 3 then
+    skull_fx_index = 1
   end
+  print("kingz of wizardz", 32, 60, 7)
+  if startscreen_game_timer_exists then
+    print("game starting in "..tostr(ceil(c_startscreen_timer_countdown_start - timers[c_startscreen_timer].elapsed)), 28, 90, 6)
+  else
+    print("press x to start", 32, 90, 6)
+  end
+end
+
+function draw_gamescreen()
+  cls()
+  draw_entity(pl1)
+  draw_entity(pl2)
+  foreach(skeltals, draw_entity)
+  foreach(skeltals, skeltal_chew)
+  foreach(projectiles, draw_entity)
+  foreach(projectiles, update_projectile_spr)
+  draw_healthbars()
 end
 
 function skeltal_chew(e)
@@ -481,6 +490,26 @@ function add_particle(e)
   pset(x, y, 7)
 end
 
+function draw_healthbars()
+  draw_healthbar(pl1, 8)
+  draw_healthbar(pl2, 80)
+end
+
+function draw_healthbar(pl, x)
+  local col = healthbar_color(pl.health)
+  local x_end = x + (pl.health/c_max_health)*40
+  rectfill(x, 120, x_end, 124, col)
+end
+
+function healthbar_color(health)
+  if health > ((2*c_max_health)/3) then
+   return 11
+  elseif health > (c_max_health/3) then
+   return 10
+  else
+   return 8
+  end
+end
 __gfx__
 0000000000000000000000000000000000000000000000000000000000000000000000000ccccc000ccccc000ccccc00000000000ccccc000ccccc0000000000
 000000000808000000000000000000000000000000000000000000000000000000000000ccccccc0ccccccc0ccccccc00ccccc00ccccccc0ccccccc000000000
