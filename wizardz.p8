@@ -355,8 +355,32 @@ function draw_projectile(e)
   pos_x = e.x - ((e.size - 8) / 2)
   pos_y = e.y - ((e.size - 8) / 2)
   sspr(spr_x, spr_y, 8, 8, pos_x, pos_y, e.size, e.size, e.flip_x, e.flip_y)
+  for i = 0, 5 do
+    add_particle(e)
+  end
 end
 
+function add_particle(e)
+  -- e is a projectile
+  alpha_0 = atan2(-e.vel.x, -e.vel.y)
+  alpha = alpha_0 + rnd(0.25) - 0.125
+
+  proj_front_x = 4
+  if e.vel.x != 0 then
+    proj_front_x += 4 * sgn(e.vel.x)
+  end
+  proj_front_y = 4
+  if e.vel.y != 0 then
+    proj_front_y += 4 * sgn(e.vel.y)
+  end
+
+  x_offs = cos(alpha)
+  y_offs = sin(alpha)
+  r = rnd(12)
+  x = e.x + proj_front_x + r * x_offs
+  y = e.y + proj_front_y + r * y_offs
+  pset(x, y, 7)
+end
 
 __gfx__
 0000000000000000000000000000000000000000000000000000000000000000000000000ccccc000ccccc000ccccc00000000000ccccc000ccccc0000000000
