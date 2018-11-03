@@ -93,6 +93,8 @@ c_max_mana = 100
 
 fence_sprs = {192, 193, 194, 195}
 
+c_map_limits = {0, 0, 128, 128}
+
 ---- init ----
 local timers = {}
 local startscreen_game_time = nil
@@ -535,6 +537,11 @@ end
 function update_projectile(f)
   f.x += f.vel.x
   f.y += f.vel.y
+  proj_box = { f.x, f.y, f.x + 8, f.y + 8 }
+  if not intersect(proj_box, c_map_limits) then
+    del(projectiles, f)
+    return
+  end
   if f.projectile_type == 'fireball' then
     fireball_collision(f)
   end
