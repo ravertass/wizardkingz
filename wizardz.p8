@@ -12,6 +12,14 @@ function sign(num)
   end
 end
 
+function indexof(e, list)
+  for i=1, #list do
+    if e == list[i] then
+      return i
+    end
+  end
+end
+
 ---- diagnostics ----
 
 c_perf_names = {"update", "draw"}
@@ -57,6 +65,7 @@ end
 ---- constants ----
 
 skeltal_sprs = {064, 065}
+human_sprs = {080, 081}
 c_startscreen_timer = "startscreen_timer"
 c_startscreen_timer_countdown_start = 3
 projectile_sprs = {
@@ -121,12 +130,13 @@ function _init()
   pl1 = new_player1()
   pl2 = new_player2()
   skeltals = {}
+  humans = {}
   projectiles = {}
   fire_particles = {}
   baits = {}
-  add(skeltals, new_skeltal())
-  add(skeltals, new_skeltal())
-  add(skeltals, new_skeltal())
+  add_skeltal()
+  add_skeltal()
+  add_skeltal()
   init_startscreen()
   music(c_song_1)
 end
@@ -209,17 +219,32 @@ function new_player2()
   }
 end
 
-function new_skeltal()
-  return {
+function add_human()
+  add(humans, {
     x = rnd(104)+8,
     y = rnd(72)+32,
     vel = {
       x = 0,
       y = 0
     },
-    type = "skeltal",
-    spr = 064
-  }
+    type = 'human',
+    sprs = human_sprs,
+    spr = human_sprs[1]
+  })
+end
+
+function add_skeltal()
+  add(skeltals, {
+    x = rnd(104)+8,
+    y = rnd(72)+32,
+    vel = {
+      x = 0,
+      y = 0
+    },
+    type = 'skeltal',
+    sprs = skeltal_sprs,
+    spr = skeltal_sprs[1]
+  })
 end
 
 function init_startscreen()
@@ -485,8 +510,8 @@ function kill(target, wpn)
   sfx(sfx_expl, 2)
   del(skeltals, target)
   del(projectiles, wpn)
-  add(skeltals, new_skeltal())
-  add(skeltals, new_skeltal())
+  add_skeltal()
+  add_skeltal()
   create_skeltal_particles(skeltal, wpn)
 end
 
@@ -727,8 +752,8 @@ function draw_gamescreen()
   draw_environment()
   foreach(baits, update_bait_spr)
   foreach(baits, draw_entity)
-  foreach(skeltals, draw_entity)
-  foreach(skeltals, skeltal_chew)
+  draw_fences()
+  draw_enemies()
   draw_players()
   foreach(projectiles, draw_entity)
   foreach(projectiles, update_projectile_spr)
@@ -756,13 +781,13 @@ function draw_players()
   end
 end
 
-function skeltal_chew(e)
+function update_spr(e)
   if anim_count % 2 == 0 then
-    if e.spr == skeltal_sprs[1] then
-     e.spr = skeltal_sprs[2]
-    else
-      e.spr = skeltal_sprs[1]
+    local nextspr = indexof(e.spr, e.sprs) + 1
+    if nextspr > #e.sprs then
+      nextspr = 1
     end
+    e.spr = e.sprs[nextspr]
   end
 end
 
@@ -895,6 +920,21 @@ function add_particle(e)
   x = e.x + proj_front_x + r * x_offs
   y = e.y + proj_front_y + r * y_offs
   pset(x, y, 7)
+end
+
+function draw_enemies()
+  draw_skeltals()
+  draw_humans()
+end
+
+function draw_skeltals()
+  foreach(skeltals, draw_entity)
+  foreach(skeltals, update_spr)
+end
+
+function draw_humans()
+  foreach(humans, draw_entity)
+  foreach(humans, update_spr)
 end
 
 function draw_manabars()
