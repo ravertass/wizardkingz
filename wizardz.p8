@@ -9,8 +9,10 @@ __lua__
 skeltal_sprs = {064, 065}
 c_startscreen_timer = "startscreen_timer"
 c_startscreen_timer_countdown_start = 3
-fireball_sprs = {128, 129}
-lightning_ball_sprs = {132, 133, 134, 135}
+projectile_sprs = {
+  fireball = {128, 129},
+  lightning_ball = {132, 133, 134, 135}
+}
 
 c_song_1 = 000
 pl1_run_down = {013, 014}
@@ -26,7 +28,7 @@ function _init()
   pl1 = new_player1()
   pl2 = new_player2()
   enemies = {}
-  fireballs = {}
+  projectiles = {}
   add(enemies, new_skeltal())
   add(enemies, new_skeltal())
   add(enemies, new_skeltal())
@@ -48,6 +50,7 @@ function new_player1()
       x = 1,
       y = 0
     },
+    projectile_type = "fireball",
     did_shoot = false
   }
 end
@@ -66,6 +69,7 @@ function new_player2()
       x = 1,
       y = 0
     },
+    projectile_type = "lightning_ball",
     did_shoot = false
   }
 end
@@ -89,13 +93,14 @@ function init_startscreen()
   startscreen_game_time = time()
 end
 
-function new_fireball(x, y, vel)
+function new_projectile(x, y, vel, _type)
   return {
     x = x,
     y = y,
     vel = vel,
-    type = "fireball",
-    spr = fireball_sprs[1],
+    type = "projectile",
+    projectile_type = _type,
+    spr = projectile_sprs[_type][1],
     spr_ix = 1,
     flip_x = false,
     flip_y = false
@@ -119,7 +124,7 @@ function _update()
     update_player(pl1)
     update_player(pl2)
     foreach(enemies, update_entity)
-    foreach(fireballs, update_entity)
+    foreach(projectiles, update_entity)
   end
 end
 
@@ -179,7 +184,7 @@ function shoot_fireball(pl)
     x = pl.vel.x + 2 * pl.dir.x,
     y = pl.vel.y + 2 * pl.dir.y,
   }
-  add(fireballs, new_fireball(pl.x, pl.y, vel))
+  add(projectiles, new_projectile(pl.x, pl.y, vel, pl.projectile_type))
 end
 
 function follow(target, e)
@@ -204,8 +209,8 @@ end
 function update_entity(e)
   if e.type == "skeltal" then
     update_skeltal(e)
-  elseif e.type == "fireball" then
-    update_fireball(e)
+  elseif e.type == "projectile" then
+    update_projectile(e)
   end
 end
 
@@ -217,7 +222,7 @@ function update_skeltal(s)
   -- end
 end
 
-function update_fireball(f)
+function update_projectile(f)
   f.x += f.vel.x
   f.y += f.vel.y
 end
@@ -286,8 +291,8 @@ function _draw()
     draw_entity(pl2)
     foreach(enemies, draw_entity)
     foreach(enemies, skeltal_chew)
-    foreach(fireballs, draw_entity)
-    foreach(fireballs, update_fireball_spr)
+    foreach(projectiles, draw_entity)
+    foreach(projectiles, update_projectile_spr)
   end
 end
 
@@ -299,15 +304,15 @@ function skeltal_chew(e)
   end
 end
 
-function update_fireball_spr(e)
+function update_projectile_spr(e)
   e.spr_ix += 1
-  if e.spr_ix > #fireball_sprs then
+  if e.spr_ix > #(projectile_sprs[e.projectile_type]) then
     e.spr_ix = 1
   end
 
   e.flip_x = e.vel.x < 0
   e.flip_y = e.vel.y < 0
-  e.spr = fireball_sprs[e.spr_ix]
+  e.spr = projectile_sprs[e.projectile_type][e.spr_ix]
   if e.vel.x == 0 then
     e.spr += 16
   end
@@ -322,8 +327,8 @@ function update_player_spr(e, anim)
 end
 
 function draw_entity(e)
-  if e.type == "fireball" then
-    draw_fireball(e)
+  if e.type == "projectile" then
+    draw_projectile(e)
   elseif e.type == 'skeltal' then
     draw_skeltal(e)
   else
@@ -336,7 +341,7 @@ function draw_skeltal(e)
   spr(e.spr, e.x, e.y, 1, 1, flip_x)
 end
 
-function draw_fireball(e)
+function draw_projectile(e)
   spr(e.spr, e.x, e.y, 1, 1, e.flip_x, e.flip_y)
 end
 
