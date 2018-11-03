@@ -433,7 +433,7 @@ end
 function add_particle(e)
   -- e is a projectile
   alpha_0 = atan2(-e.vel.x, -e.vel.y)
-  alpha = alpha_0 + rnd(0.25) - 0.125
+  alpha = alpha_0 + rnd(0.15) - 0.075
 
   proj_front_x = 4
   if e.vel.x != 0 then
