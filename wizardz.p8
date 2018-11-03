@@ -67,6 +67,8 @@ pl1_run_down = {013, 014}
 pl1_run_side = {045, 046}
 pl1_run_up = {029, 030}
 pl1_idle = {011, 012}
+pl1_idle_up = {027, 028}
+pl1_idle_side = {043, 044}
 
 anim_count = 0
 c_max_health = 100
@@ -108,7 +110,8 @@ function new_player1()
     projectile_type = "fireball",
     did_shoot = false,
     health = c_max_health,
-    invincibility_counter = 60
+    invincibility_counter = 60,
+    flip_pl = false
   }
 end
 
@@ -131,7 +134,8 @@ function new_player2()
     projectile_type = "lightning_ball",
     did_shoot = false,
     health = c_max_health,
-    invincibility_counter = 60
+    invincibility_counter = 60,
+    flip_pl = false
   }
 end
 
@@ -218,7 +222,7 @@ end
 
 function count()
   anim_count += 1
-  if anim_count == 30 then
+  if anim_count == 29 then
     anim_count = 0
   end
 end
@@ -572,32 +576,44 @@ function draw_player(e)
     return
   end
 
-  flip_pl = false
   if e.vel.x == 0 and e.vel.y == 0 then
-    if anim_count % 6 == 0 then
+    if e.dir.x > 0 and e.dir.y == 0 and anim_count % 6 == 0 then
+      e.flip_pl = false
+      animate_player(e, pl1_idle_side)
+    elseif e.dir.x < 0 and e.dir.y == 0 and anim_count % 6 == 0 then
+      e.flip_pl = true
+      animate_player(e, pl1_idle_side)
+    elseif e.dir.x == 0 and e.dir.y > 0 and anim_count % 6 == 0 then
+      e.flip_pl = false
       animate_player(e, pl1_idle)
+    elseif e.dir.x == 0 and e.dir.y < 0 and anim_count % 6 == 0 then
+      e.flip_pl = false
+      animate_player(e, pl1_idle_up)
     end
   elseif e.vel.x > 0 then
+    e.flip_pl = false
     if anim_count % 2 == 0 then
       animate_player(e, pl1_run_side)
     end
   elseif e.vel.x < 0 then
-    flip_pl = true
+    e.flip_pl = true
     if anim_count % 2 == 0 then
       animate_player(e, pl1_run_side)
     end
   elseif e.vel.y > 0 then
+    e.flip_pl = false
     if anim_count % 2 == 0 then
       animate_player(e, pl1_run_down)
     end
   elseif e.vel.y < 0 then
+    e.flip_pl = false
     if anim_count % 2 == 0 then
       animate_player(e, pl1_run_up)
     end
   else
     e.spr = 001
   end
-  spr(e.spr, e.x, e.y, 1, 1, flip_pl)
+  spr(e.spr, e.x, e.y, 1, 1, e.flip_pl)
 end
 
 function animate_player(e, anims)
