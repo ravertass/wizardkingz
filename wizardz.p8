@@ -40,9 +40,11 @@ end
 
 function new_player1()
   return {
+    type = 'player',
     x = 10,
     y = 10,
     spr = 011,
+    spr_ix = 1,
     no = 0,
     vel = {
       x = 0,
@@ -59,9 +61,11 @@ end
 
 function new_player2()
   return {
+    type = 'player',
     x = 100,
     y = 10,
     spr = 011,
+    spr_ix = 1,
     no = 1,
     vel = {
       x = 0,
@@ -149,10 +153,8 @@ end
 function update_player(pl)
   if btn(0, pl.no) then
     pl.vel.x = -1
-    update_player_spr(pl, pl1_run_side)
   elseif btn(1, pl.no) then
     pl.vel.x = 1
-    update_player_spr(pl, pl1_run_side)
   else
     pl.vel.x = 0
   end
@@ -160,10 +162,8 @@ function update_player(pl)
 
   if btn(2, pl.no) then
     pl.vel.y = -1
-    update_player_spr(pl, pl1_run_up)
   elseif btn(3, pl.no) then
     pl.vel.y = 1
-    update_player_spr(pl, pl1_run_down)
   else
     pl.vel.y = 0
   end
@@ -394,22 +394,43 @@ function update_projectile_spr(e)
   end
 end
 
-function update_player_spr(e, anim)
-    if e.spr == anim[1] then
-    e.spr = anim[2]
-  else
-    e.spr = anim[1]
-  end
-end
-
 function draw_entity(e)
   if e.type == "projectile" then
     draw_projectile(e)
   elseif e.type == 'skeltal' then
     draw_skeltal(e)
+  elseif e.type == 'player' then
+  draw_player(e)
   else
     spr(e.spr, e.x, e.y)
   end
+end
+
+function draw_player(e)
+  flip_pl = false
+  if e.vel.x == 0 and e.vel.y == 0 then
+    animate_player(e, pl1_idle)
+  elseif e.vel.x > 0 then
+    animate_player(e, pl1_run_side)
+  elseif e.vel.x < 0 then
+    flip_pl = true
+    animate_player(e, pl1_run_side)
+  elseif e.vel.y > 0 then
+    animate_player(e, pl1_run_down)
+  elseif e.vel.y < 0 then
+    animate_player(e, pl1_run_up)
+  else
+    e.spr = 001
+  end
+  spr(e.spr, e.x, e.y, 1, 1, flip_pl)
+end
+
+function animate_player(e, anims)
+  e.spr_ix += 1
+  if e.spr_ix > #anims then
+     e.spr_ix = 1
+  end
+  e.spr = anims[e.spr_ix]
 end
 
 function draw_skeltal(e)
