@@ -70,6 +70,10 @@ function new_skeltal()
   return {
     x = rnd(128),
     y = rnd(128),
+    vel = {
+      x = 0,
+      y = 0
+    },
     type = "skeltal",
     spr = 064
   }
@@ -183,8 +187,10 @@ function move(e)
   speed = rnd(max_speed)
   dx=cos(e.dir)*speed
   dy=sin(e.dir)*speed
-  e.x+=dx
-  e.y+=dy
+  e.vel.x = dx
+  e.vel.y = dy
+  e.x += dx
+  e.y += dy
 end
 
 function update_entity(e)
@@ -302,9 +308,16 @@ end
 function draw_entity(e)
   if e.type == "fireball" then
     draw_fireball(e)
+  elseif e.type == 'skeltal' then
+    draw_skeltal(e)
   else
     spr(e.spr, e.x, e.y)
   end
+end
+
+function draw_skeltal(e)
+  flip_x = e.vel.x < 0
+  spr(e.spr, e.x, e.y, 1, 1, flip_x)
 end
 
 function draw_fireball(e)
