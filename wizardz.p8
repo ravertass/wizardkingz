@@ -63,6 +63,12 @@ projectile_sprs = {
   fireball = {128, 129},
   lightning_ball = {132, 133, 134}
 }
+
+bait_spr = {
+  meat = {66, 67}, -- temporary
+  cat = {66, 67}
+}
+
 skull_spr = {205}
 skull_fx_sprs = {202, 203, 204}
 
@@ -86,6 +92,8 @@ pl_acc = 0.3
 pl_max_vel = 1
 
 projectile_max_vel = 3
+
+c_bait_lifetime = 150
 
 anim_count = 0
 c_max_health = 100
@@ -115,6 +123,7 @@ function _init()
   skeltals = {}
   projectiles = {}
   fire_particles = {}
+  baits = {}
   add(skeltals, new_skeltal())
   add(skeltals, new_skeltal())
   add(skeltals, new_skeltal())
@@ -144,6 +153,8 @@ function new_player1()
       y = 0
     },
     projectile_type = "fireball",
+    bait_type = "meat",
+    active_baits = 0,
     shoot_counter = 10,
     mana = c_max_mana,
     mana_punishment_counter = 0,
@@ -181,6 +192,8 @@ function new_player2()
       y = 0
     },
     projectile_type = "lightning_ball",
+    bait_type = "cat",
+    active_baits = 0,
     shoot_counter = 10,
     mana = c_max_mana,
     mana_punishment_counter = 0,
@@ -232,6 +245,19 @@ function new_projectile(x, y, vel, _type)
   }
 end
 
+function new_bait(x, y, bait_type, lifetime)
+  return {
+    x = x,
+    y = y,
+    type = "bait",
+    bait_type = bait_type,
+    lifetime = lifetime,
+    spr = bait_spr[bait_type][1],
+    sprs = bait_spr[bait_type],
+    spr_ix = 1
+  }
+end
+
 ---- update ----
 
 function _update()
@@ -256,6 +282,7 @@ function _update()
     count()
     update_player(pl1)
     update_player(pl2)
+    foreach(baits, update_entity)
     foreach(skeltals, update_entity)
     foreach(projectiles, update_entity)
   end
@@ -317,6 +344,7 @@ function update_player(pl)
 
   update_player_pos(pl)
   handle_magic(pl)
+  handle_bait(pl)
   update_invincibility(pl)
   player_collisions(pl)
 end
@@ -338,6 +366,13 @@ function handle_magic(pl)
         sfx(sfx_mana_punishment)
       end
     end
+  end
+end
+
+function handle_bait(pl)
+  if btn(4, pl.no) and pl.active_baits == 0 then
+    leave_bait(pl)
+    pl.active_baits += 1
   end
 end
 
@@ -421,6 +456,10 @@ function shoot_straight_fireball(pl)
     y = 3 * pl.dir.y,
   }
   shoot_fireball(pl.x, pl.y, vel, pl.projectile_type)
+end
+
+function leave_bait(pl)
+  add(baits, new_bait(pl.x, pl.y, pl.bait_type, c_bait_lifetime))
 end
 
 function follow(target, e)
@@ -528,19 +567,54 @@ function update_entity(e)
     update_skeltal(e)
   elseif e.type == "projectile" then
     update_projectile(e)
+  elseif e.type == "bait" then
+    update_bait(e)
   end
 end
 
 function update_skeltal(s)
   local action = flr(rnd(10))
   if action <= 8 then
-    follow(pl1, s)
+    target = select_target(s)
+    follow(target, s)
   elseif action == 9 then
     s.x = s.x + rnd(2) - 1
     s.y = s.y + rnd(2) - 1
   else
     -- do nothing
   end
+end
+
+function select_target(s)
+  local targets = get_targets(s)
+  local best_dist = 32767
+  local best_target = targets[1]
+  for target in all(targets) do
+    local dx = s.x - target.x
+    local dy = s.y - target.y
+    local dist = dx * dx + dy * dy
+    if dist < best_dist then
+      best_dist = dist
+      best_target = target
+    end
+  end
+  return best_target
+end
+
+function get_targets(s)
+  local target_pl
+  if s.type == "skeltal" then
+    target_pl = pl1
+  else
+    target_pl = pl2
+  end
+  local targets = {target_pl}
+  for bait in all(baits) do
+    if bait.bait_type == target_pl.bait_type then
+      add(targets, bait)
+    end
+  end
+  return targets
 end
 
 function update_projectile(f)
@@ -553,6 +627,18 @@ function update_projectile(f)
   end
   if f.projectile_type == 'fireball' then
     fireball_collision(f)
+  end
+end
+
+function update_bait(b)
+  b.lifetime -= 1
+  if b.lifetime < 0 then
+    del(baits, b)
+    if b.bait_type == "meat" then
+      pl1.active_baits -= 1
+    elseif b.bait_type == "cat" then
+      pl2.active_baits -= 1
+    end
   end
 end
 
@@ -639,6 +725,8 @@ end
 function draw_gamescreen()
   cls()
   draw_environment()
+  foreach(baits, update_bait_spr)
+  foreach(baits, draw_entity)
   foreach(skeltals, draw_entity)
   foreach(skeltals, skeltal_chew)
   draw_players()
@@ -698,6 +786,14 @@ function update_projectile_spr(e)
   elseif e.size <= 7 then
     e.size_dx = 1
   end
+end
+
+function update_bait_spr(e)
+  e.spr_ix += 1
+  if e.spr_ix > #e.sprs then
+    e.spr_ix = 1
+  end
+  e.spr = e.sprs[e.spr_ix]
 end
 
 function draw_entity(e)
