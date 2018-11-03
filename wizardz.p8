@@ -65,7 +65,7 @@ projectile_sprs = {
 }
 
 bait_spr = {
-  meat = {66, 67}, -- temporary
+  meat = {96}, -- temporary
   cat = {66, 67}
 }
 
