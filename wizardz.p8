@@ -101,7 +101,7 @@ function new_skeltal()
   }
 end
 
-function init_startscreen() 
+function init_startscreen()
   mode = 0 ---- startscreen = 0 | gamescreen = 1 ----
   startscreen_game_timer_exists = false
   startscreen_game_time = time()
@@ -273,11 +273,15 @@ function update_entity(e)
 end
 
 function update_skeltal(s)
-  follow(pl1, s)
-  -- if rnd(3) > 2 then
-  --   s.x = s.x + rnd(3) - 1.5
-  --   s.y = s.y + rnd(3) - 1.5
-  -- end
+  local action = flr(rnd(10))
+  if action <= 8 then
+    follow(pl1, s)
+  elseif action == 9 then
+    s.x = s.x + rnd(2) - 1
+    s.y = s.y + rnd(2) - 1
+  else
+    -- do nothing
+  end
 end
 
 function update_projectile(f)
