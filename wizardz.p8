@@ -790,10 +790,10 @@ end
 
 function update_bait_spr(e)
   e.spr_ix += 1
-  if e.spr_ix > #e.sprs then
+  if ceil(e.spr_ix/10) > #e.sprs then
     e.spr_ix = 1
   end
-  e.spr = e.sprs[e.spr_ix]
+  e.spr = e.sprs[ceil(e.spr_ix/10)]
 end
 
 function draw_entity(e)
