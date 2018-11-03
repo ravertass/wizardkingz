@@ -34,7 +34,12 @@ function new_player1()
     vel = {
       x = 0,
       y = 0
-    }
+    },
+    dir = {
+      x = 1,
+      y = 1
+    },
+    did_shoot = false
   }
 end
 
@@ -47,7 +52,12 @@ function new_player2()
     vel = {
       x = 0,
       y = 0
-    }
+    },
+    dir = {
+      x = 1,
+      y = 1
+    },
+    did_shoot = false
   }
 end
 
@@ -106,12 +116,22 @@ function update_player(pl)
   end
   pl.y = pl.y + pl.vel.y
 
+  if pl.vel.x != 0 or pl.vel.y != 0 then
+    pl.dir.x = pl.vel.x
+    pl.dir.y = pl.vel.y
+  end
+
   if btn(4, pl.no) then
-    vel = {
-      x = pl.vel.x + 1,
-      y = pl.vel.y + 1,
-    }
-    add(fireballs, new_fireball(pl.x, pl.y, vel))
+    if not pl.did_shoot then
+      vel = {
+        x = pl.vel.x + 2 * pl.dir.x,
+        y = pl.vel.y + 2 * pl.dir.y,
+      }
+      add(fireballs, new_fireball(pl.x, pl.y, vel))
+    end
+    pl.did_shoot = true
+  else
+    pl.did_shoot = false
   end
 end
 
@@ -190,8 +210,19 @@ function update_fireball_spr(e)
 end
 
 function draw_entity(e)
-  spr(e.spr, e.x, e.y)
+  if e.type == "fireball" then
+    draw_fireball(e)
+  else
+    spr(e.spr, e.x, e.y)
+  end
 end
+
+function draw_fireball(e)
+  flip_x = e.vel.x < 0
+  spr(e.spr, e.x, e.y, 1, 1, flip_x)
+end
+
+
 __gfx__
 0000000000000000000000000000000000000000000000000000000000000000000000000ccccc000ccccc000ccccc00000000000ccccc000ccccc0000000000
 000000000808000000000000000000000000000000000000000000000000000000000000ccccccc0ccccccc0ccccccc00ccccc00ccccccc0ccccccc000000000
