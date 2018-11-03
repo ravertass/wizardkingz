@@ -90,6 +90,23 @@ function update_player(pl)
   pl.y = pl.y + pl.vel.y
 end
 
+function follow(target, e)
+  world_size = 128
+  norm_x=(target.x-e.x)/world_size
+  norm_y=(target.y-e.y)/world_size
+  e.dir=atan2(norm_x,norm_y)
+  move(e)
+end
+
+function move(e)
+  max_speed = 0.4
+  speed = rnd(max_speed)
+  dx=cos(e.dir)*speed
+  dy=sin(e.dir)*speed
+  e.x+=dx
+  e.y+=dy
+end
+
 function update_entity(e)
   if e.type == "skeltal" then
     update_skeltal(e)
@@ -97,10 +114,11 @@ function update_entity(e)
 end
 
 function update_skeltal(s)
-  if rnd(3) > 2 then
-    s.x = s.x + rnd(3) - 1.5
-    s.y = s.y + rnd(3) - 1.5
-  end
+  follow(pl1, s)
+  -- if rnd(3) > 2 then
+  --   s.x = s.x + rnd(3) - 1.5
+  --   s.y = s.y + rnd(3) - 1.5
+  -- end
 end
 
 ---- draw ----
@@ -117,11 +135,11 @@ function _draw()
     draw_entity(pl1)
     draw_entity(pl2)
     foreach(enemies, draw_entity)
-    foreach(enemies, update_skeltal_spr)
+    foreach(enemies, skeltal_chew)
   end
 end
 
-function update_skeltal_spr(e)
+function skeltal_chew(e)
   if e.spr == skeltal_sprs[1] then
     e.spr = skeltal_sprs[2]
   else
