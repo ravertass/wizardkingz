@@ -95,6 +95,9 @@ c_max_mana = 100
 fence_sprs = {192, 193, 194, 195}
 house_sprs = {208, 209, 210}
 house1_sprs = {224, 225, 226}
+moon_spr = {196}
+scary_tree_spr = {198}
+scary_tree1_spr = {200}
 house_animation_index = 1
 house1_animation_index = 1
 house_countdown = 1
@@ -305,8 +308,8 @@ function update_player(pl)
     pl.acc.y = 0
   end
   pl.y = pl.y + pl.vel.y
-  if pl.y <= 32 then
-    pl.y = 32
+  if pl.y <= 30 then
+    pl.y = 30
   end
   if pl.y >= 104 then
     pl.y = 104
@@ -635,7 +638,7 @@ end
 
 function draw_gamescreen()
   cls()
-  draw_fences()
+  draw_environment()
   foreach(skeltals, draw_entity)
   foreach(skeltals, skeltal_chew)
   draw_players()
@@ -645,11 +648,12 @@ function draw_gamescreen()
   foreach(fire_particles, draw_fire_particle)
   draw_manabars()
   draw_healthbars()
-  draw_environment()
 end
 
 function draw_environment()
   draw_fences()
+  draw_moon()
+  draw_scary_trees()
   draw_houses()
 end
 
@@ -892,6 +896,15 @@ function draw_houses()
   if house_countdown > 300 then
     house_countdown = 1
   end
+end
+
+function draw_moon() 
+  spr(moon_spr[1], 112, 0, 2, 2)
+end
+
+function draw_scary_trees() 
+  spr(scary_tree_spr[1], 102, 8, 2, 2)
+  spr(scary_tree1_spr[1], 72, 6, 2, 2)
 end
 
 __gfx__
