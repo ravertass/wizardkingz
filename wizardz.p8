@@ -4,6 +4,48 @@ __lua__
 -- kingz of wizardz
 -- a spooky game jam game
 
+---- diagnostics ----
+
+c_perf_names = {"update", "draw"}
+c_perf_history = {}
+c_draw_perf_hist = {}
+c_diag_counter = 0
+
+function list_avg(lst)
+  sum = 0
+  for i = 1, #lst do
+    sum += lst[i]
+  end
+  if #lst > 0 then
+    avg = sum / #lst
+  else
+    avg = 0
+  end
+  return avg
+end
+
+function log_perf(name, before, after)
+  add(c_perf_history[name], (after - before))
+end
+
+function reset_diag()
+  for i = 1, #c_perf_names do
+    c_perf_history[c_perf_names[i]] = {}
+  end
+end
+
+function print_diag_line(diag_name)
+  diag_list = c_perf_history[diag_name]
+  avg = list_avg(diag_list)
+  printh("  "..diag_name..": "..avg)
+end
+
+function print_diagnostics()
+  n_points = #c_perf_history.update
+  printh("Perf (average over "..n_points.." frames):")
+  foreach(c_perf_names, print_diag_line)
+end
+
 ---- constants ----
 
 skeltal_sprs = {064, 065}
@@ -33,6 +75,7 @@ local timers = {}
 local startscreen_game_time = nil
 
 function _init()
+  reset_diag()
   pl1 = new_player1()
   pl2 = new_player2()
   skeltals = {}
@@ -127,6 +170,13 @@ end
 ---- update ----
 
 function _update()
+  ---- diagnostics ----
+  c_diag_counter += 1
+  if c_diag_counter == 30 then
+    c_diag_counter = 0
+    print_diagnostics()
+    reset_diag()
+  end
   ---- startscreen ----
   update_timers()
   if mode == 0 then
@@ -144,6 +194,9 @@ function _update()
     foreach(skeltals, update_entity)
     foreach(projectiles, update_entity)
   end
+  ---- diagnostics ----
+  time_after = stat(1)
+  log_perf("update", 0, time_after)
 end
 
 function create_startscreen_countdown()
@@ -363,11 +416,17 @@ end
 ---- draw ----
 
 function _draw()
+  ---- diagnostics ----
+  time_before = stat(1)
+  ---- startscreen ----
   if mode == 0 then
     draw_startscreen()
   elseif mode == 1 then
     draw_gamescreen()
   end
+  ---- diagnostics ----
+  time_after = stat(1)
+  log_perf("draw", time_before, time_after)
 end
 
 function draw_startscreen()
