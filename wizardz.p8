@@ -4,6 +4,56 @@ __lua__
 -- kingz of wizardz
 -- a spooky game jam game
 
+function sign(num)
+  if num == 0 then
+    return 0
+  else
+    return sgn(num)
+  end
+end
+
+---- diagnostics ----
+
+c_perf_names = {"update", "draw"}
+c_perf_history = {}
+c_draw_perf_hist = {}
+c_diag_counter = 0
+
+function list_avg(lst)
+  sum = 0
+  for i = 1, #lst do
+    sum += lst[i]
+  end
+  if #lst > 0 then
+    avg = sum / #lst
+  else
+    avg = 0
+  end
+  return avg
+end
+
+function log_perf(name, before, after)
+  add(c_perf_history[name], (after - before))
+end
+
+function reset_diag()
+  for i = 1, #c_perf_names do
+    c_perf_history[c_perf_names[i]] = {}
+  end
+end
+
+function print_diag_line(diag_name)
+  diag_list = c_perf_history[diag_name]
+  avg = list_avg(diag_list)
+  printh("  "..diag_name..": "..avg)
+end
+
+function print_diagnostics()
+  n_points = #c_perf_history.update
+  printh("Perf (average over "..n_points.." frames):")
+  foreach(c_perf_names, print_diag_line)
+end
+
 ---- constants ----
 
 skeltal_sprs = {064, 065}
@@ -19,11 +69,17 @@ skull_fx_sprs = {202, 203, 204}
 c_song_1 = 000
 sfx_shoot = 21
 sfx_expl = 22
+sfx_ouch = 23
 
 pl1_run_down = {013, 014}
 pl1_run_side = {045, 046}
 pl1_run_up = {029, 030}
 pl1_idle = {011, 012}
+pl1_idle_up = {027, 028}
+pl1_idle_side = {043, 044}
+
+pl_acc = 0.3
+pl_max_vel_squared = 1
 
 anim_count = 0
 c_max_health = 100
@@ -35,10 +91,12 @@ local timers = {}
 local startscreen_game_time = nil
 
 function _init()
+  reset_diag()
   pl1 = new_player1()
   pl2 = new_player2()
   skeltals = {}
   projectiles = {}
+  fire_particles = {}
   add(skeltals, new_skeltal())
   add(skeltals, new_skeltal())
   add(skeltals, new_skeltal())
@@ -54,6 +112,11 @@ function new_player1()
     spr = 011,
     spr_ix = 1,
     no = 0,
+    friction = 0.2,
+    acc = {
+      x = 0,
+      y = 0
+    },
     vel = {
       x = 0,
       y = 0
@@ -64,7 +127,9 @@ function new_player1()
     },
     projectile_type = "fireball",
     did_shoot = false,
-    health = 100
+    health = c_max_health,
+    invincibility_counter = 60,
+    flip_pl = false
   }
 end
 
@@ -76,6 +141,11 @@ function new_player2()
     spr = 011,
     spr_ix = 1,
     no = 1,
+    friction = 0.1,
+    acc = {
+      x = 0,
+      y = 0
+    },
     vel = {
       x = 0,
       y = 0
@@ -86,7 +156,9 @@ function new_player2()
     },
     projectile_type = "lightning_ball",
     did_shoot = false,
-    health = c_max_health
+    health = c_max_health,
+    invincibility_counter = 60,
+    flip_pl = false
   }
 end
 
@@ -129,6 +201,13 @@ end
 ---- update ----
 
 function _update()
+  ---- diagnostics ----
+  c_diag_counter += 1
+  if c_diag_counter == 30 then
+    c_diag_counter = 0
+    print_diagnostics()
+    reset_diag()
+  end
   ---- startscreen ----
   update_timers()
   if mode == 0 then
@@ -146,6 +225,9 @@ function _update()
     foreach(skeltals, update_entity)
     foreach(projectiles, update_entity)
   end
+  ---- diagnostics ----
+  time_after = stat(1)
+  log_perf("update", 0, time_after)
 end
 
 function create_startscreen_countdown()
@@ -163,18 +245,18 @@ end
 
 function count()
   anim_count += 1
-  if anim_count == 30 then
+  if anim_count == 29 then
     anim_count = 0
   end
 end
 
 function update_player(pl)
   if btn(0, pl.no) then
-    pl.vel.x = -1
+    pl.acc.x = -pl_acc
   elseif btn(1, pl.no) then
-    pl.vel.x = 1
+    pl.acc.x = pl_acc
   else
-    pl.vel.x = 0
+    pl.acc.x = 0
   end
   pl.x = pl.x + pl.vel.x
   if pl.x <= 8 then
@@ -185,11 +267,11 @@ function update_player(pl)
   end
 
   if btn(2, pl.no) then
-    pl.vel.y = -1
+    pl.acc.y = -pl_acc
   elseif btn(3, pl.no) then
-    pl.vel.y = 1
+    pl.acc.y = pl_acc
   else
-    pl.vel.y = 0
+    pl.acc.y = 0
   end
   pl.y = pl.y + pl.vel.y
   if pl.y <= 8 then
@@ -199,10 +281,7 @@ function update_player(pl)
     pl.y = 104
   end
 
-  if pl.vel.x != 0 or pl.vel.y != 0 then
-    pl.dir.x = pl.vel.x
-    pl.dir.y = pl.vel.y
-  end
+  update_player_pos(pl)
 
   if btn(4, pl.no) then
     if not pl.did_shoot then
@@ -212,6 +291,73 @@ function update_player(pl)
   else
     pl.did_shoot = false
   end
+
+  update_invincibility(pl)
+  player_collisions(pl)
+end
+
+function update_invincibility(pl)
+  pl.invincibility_counter = max(0, pl.invincibility_counter - 1)
+end
+
+function update_player_pos(pl)
+  friction_x = sign(pl.vel.x) * pl.friction
+  friction_y = sign(pl.vel.y) * pl.friction
+  if sign(pl.vel.x) != sign(pl.vel.x - friction_x) then
+    pl.vel.x = 0
+  else
+    pl.vel.x -= friction_x
+  end
+  if sign(pl.vel.y) != sign(pl.vel.y - friction_y) then
+    pl.vel.y = 0
+  else
+    pl.vel.y -= friction_y
+  end
+  pl.vel.x += pl.acc.x
+  pl.vel.y += pl.acc.y
+
+  if pl.vel.x * pl.vel.x + pl.vel.y * pl.vel.y > pl_max_vel_squared then
+    a = atan2(pl.vel.x, pl.vel.y)
+    pl.vel.x = cos(a)
+    pl.vel.y = sin(a)
+  end
+
+  pl.x = pl.x + pl.vel.x
+  pl.y = pl.y + pl.vel.y
+
+  if pl.vel.x != 0 or pl.vel.y != 0 then
+    pl.dir.x = sign(pl.vel.x)
+    pl.dir.y = sign(pl.vel.y)
+  end
+end
+
+function player_collisions(pl)
+  if pl.invincibility_counter == 0 then
+    for skeltal in all(skeltals) do
+      player_skeltal_collision(pl, skeltal)
+    end
+  end
+end
+
+function player_skeltal_collision(pl, skeltal)
+  local pl_rect = player_rect(pl)
+  local skeltal_rect = skeltal_rect(skeltal)
+  if intersect(pl_rect, skeltal_rect) then
+    take_damage(pl)
+  end
+end
+
+function take_damage(pl)
+  sfx(sfx_ouch, 1)
+  pl.health = max(pl.health - 20, 0)
+  if pl.health <= 0 then
+    kill_player(pl)
+  end
+  pl.invincibility_counter = 30
+end
+
+function kill_player(pl)
+  -- TODO: Player should die
 end
 
 function shoot_fireball(pl)
@@ -242,6 +388,48 @@ function move(e)
   e.y += dy
 end
 
+function kill(target, wpn)
+  sfx(sfx_expl, 2)
+  del(skeltals, target)
+  del(projectiles, wpn)
+  add(skeltals, new_skeltal())
+  add(skeltals, new_skeltal())
+  create_skeltal_particles(skeltal, wpn)
+end
+
+cols_skeltal = {7,8,9}
+function create_skeltal_particles(skeltal, fireball)
+  local x = skeltal.x+3
+  local y = skeltal.y+3
+  local dxoffs=skeltal.vel.x+cos(2)*fireball.vel.x
+  local dyoffs=skeltal.vel.y+sin(2)*fireball.vel.x
+  for i = 1, 5 do
+    add(fire_particles, create_fire_particle(x, y, dxoffs, dyoffs, cols_skeltal[flr(rnd(3))+1]))
+  end
+end
+
+function create_fire_particle(x, y, dxoffs, dyoffs, col)
+  return {
+    x = x,
+    y = y,
+    col = col,
+    dx = rnd(2)-1+dxoffs,
+    dy = -rnd(1)+dyoffs,
+    ddy = 0.1,
+    count = 30
+ }
+end
+
+function update_fire_particle(particle)
+  particle.x += particle.dx
+  particle.y += particle.dy
+  particle.dy += particle.ddy
+  particle.count -= 1
+  if particle.count < 1 then
+    del(fire_particles, particle)
+  end
+end
+
 function fireball_collision(fireball)
   for i = 1, #skeltals do
     skeltal = skeltals[i]
@@ -250,11 +438,7 @@ function fireball_collision(fireball)
       {fireball.x+1, fireball.y+2,
         fireball.x+6, fireball.y+6})
     then
-      sfx(sfx_expl, 2)
-      del(skeltals, skeltal)
-      del(projectiles, fireball)
-      add(skeltals, new_skeltal())
-      add(skeltals, new_skeltal())
+      kill(skeltal, fireball)
       return
     end
   end
@@ -264,6 +448,13 @@ function skeltal_rect(s)
   return {
     s.x+1, s.y+1,
     s.x+6, s.y+9
+  }
+end
+
+function player_rect(pl)
+  return {
+    pl.x+0, pl.y+1,
+    pl.x+7, pl.y+7
   }
 end
 
@@ -353,11 +544,17 @@ end
 ---- draw ----
 
 function _draw()
+  ---- diagnostics ----
+  time_before = stat(1)
+  ---- startscreen ----
   if mode == 0 then
     draw_startscreen()
   elseif mode == 1 then
     draw_gamescreen()
   end
+  ---- diagnostics ----
+  time_after = stat(1)
+  log_perf("draw", time_before, time_after)
 end
 
 function draw_startscreen()
@@ -389,6 +586,8 @@ function draw_gamescreen()
   foreach(skeltals, skeltal_chew)
   foreach(projectiles, draw_entity)
   foreach(projectiles, update_projectile_spr)
+  foreach(fire_particles, update_fire_particle)
+  foreach(fire_particles, draw_fire_particle)
   draw_healthbars()
 end
 
@@ -437,32 +636,48 @@ function draw_entity(e)
 end
 
 function draw_player(e)
-  flip_pl = false
+  if (e.invincibility_counter % 3) == 1 then
+    return
+  end
+
   if e.vel.x == 0 and e.vel.y == 0 then
-    if anim_count % 6 == 0 then
+    if e.dir.x > 0 and e.dir.y == 0 and anim_count % 6 == 0 then
+      e.flip_pl = false
+      animate_player(e, pl1_idle_side)
+    elseif e.dir.x < 0 and e.dir.y == 0 and anim_count % 6 == 0 then
+      e.flip_pl = true
+      animate_player(e, pl1_idle_side)
+    elseif e.dir.x == 0 and e.dir.y > 0 and anim_count % 6 == 0 then
+      e.flip_pl = false
       animate_player(e, pl1_idle)
+    elseif e.dir.x == 0 and e.dir.y < 0 and anim_count % 6 == 0 then
+      e.flip_pl = false
+      animate_player(e, pl1_idle_up)
     end
   elseif e.vel.x > 0 then
+    e.flip_pl = false
     if anim_count % 2 == 0 then
       animate_player(e, pl1_run_side)
     end
   elseif e.vel.x < 0 then
-    flip_pl = true
+    e.flip_pl = true
     if anim_count % 2 == 0 then
       animate_player(e, pl1_run_side)
     end
   elseif e.vel.y > 0 then
+    e.flip_pl = false
     if anim_count % 2 == 0 then
       animate_player(e, pl1_run_down)
     end
   elseif e.vel.y < 0 then
+    e.flip_pl = false
     if anim_count % 2 == 0 then
       animate_player(e, pl1_run_up)
     end
   else
     e.spr = 001
   end
-  spr(e.spr, e.x, e.y, 1, 1, flip_pl)
+  spr(e.spr, e.x, e.y, 1, 1, e.flip_pl)
 end
 
 function animate_player(e, anims)
@@ -489,19 +704,17 @@ function draw_projectile(e)
   end
 end
 
+function draw_fire_particle(particle)
+  circ(particle.x, particle.y, 0, particle.col)
+end
+
 function add_particle(e)
   -- e is a projectile
   alpha_0 = atan2(-e.vel.x, -e.vel.y)
   alpha = alpha_0 + rnd(0.15) - 0.075
 
-  proj_front_x = 4
-  if e.vel.x != 0 then
-    proj_front_x += 4 * sgn(e.vel.x)
-  end
-  proj_front_y = 4
-  if e.vel.y != 0 then
-    proj_front_y += 4 * sgn(e.vel.y)
-  end
+  proj_front_x = 4 + 4 * sign(e.vel.x)
+  proj_front_y = 4 + 4 * sign(e.vel.y)
 
   x_offs = cos(alpha)
   y_offs = sin(alpha)
@@ -712,6 +925,7 @@ __sfx__
 010e00002314023140231442314423140231442314423140221402214522140221402114021140211442114025142251522515525152251552515525142251422515225142251322512523132231422313223125
 0001000015d70166701ad701d67020d701667018d701c6701ed502165023d502464025d402663027d302862029d202961029d1001d0000d0000d0000d0000d0000d0000d0000d0000d0000d0000d0000d0000000
 00020000211502415027110281203162031620306302f6402d6702a6702867024670206701b67015620116500b6500665001650106000c6000860005600036000160001600016000160001600016000160001600
+000200001e32016330143401a35021360283702f370323703437034370303602a350203401633014320123200e310073100331001310103000e3000e3000c3000a30008300053000430002300000000000000000
 __music__
 01 0002040f
 00 01030510
