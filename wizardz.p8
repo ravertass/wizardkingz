@@ -37,7 +37,7 @@ function new_player1()
     },
     dir = {
       x = 1,
-      y = 1
+      y = 0
     },
     did_shoot = false
   }
@@ -55,7 +55,7 @@ function new_player2()
     },
     dir = {
       x = 1,
-      y = 1
+      y = 0
     },
     did_shoot = false
   }
@@ -77,7 +77,9 @@ function new_fireball(x, y, vel)
     vel = vel,
     type = "fireball",
     spr = fireball_sprs[1],
-    spr_ix = 1
+    spr_ix = 1,
+    flip_x = false,
+    flip_y = false
   }
 end
 
@@ -206,10 +208,16 @@ function skeltal_chew(e)
 end
 
 function update_fireball_spr(e)
-  e.spr = fireball_sprs[e.spr_ix]
   e.spr_ix += 1
   if e.spr_ix > #fireball_sprs then
     e.spr_ix = 1
+  end
+
+  e.flip_x = e.vel.x < 0
+  e.flip_y = e.vel.y < 0
+  e.spr = fireball_sprs[e.spr_ix]
+  if e.vel.x == 0 then
+    e.spr += 16
   end
 end
 
@@ -222,13 +230,7 @@ function draw_entity(e)
 end
 
 function draw_fireball(e)
-  flip_x = e.vel.x < 0
-  flip_y = e.vel.y < 0
-  _spr = e.spr
-  if e.vel.x == 0 then
-    _spr += 16
-  end
-  spr(_spr, e.x, e.y, 1, 1, flip_x, flip_y)
+  spr(e.spr, e.x, e.y, 1, 1, e.flip_x, e.flip_y)
 end
 
 
