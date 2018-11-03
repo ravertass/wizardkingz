@@ -198,6 +198,23 @@ function update_player(pl)
   else
     pl.did_shoot = false
   end
+
+  player_collisions(pl)
+end
+
+function player_collisions(pl)
+  for skeltal in all(skeltals) do
+    player_skeltal_collision(pl, skeltal)
+  end
+end
+
+function player_skeltal_collision(pl, skeltal)
+  local pl_rect = player_rect(pl)
+  local skeltal_rect = skeltal_rect(skeltal)
+  if intersect(pl_rect, skeltal_rect) then
+    sfx(sfx_expl, 2)
+    pl.health = max(pl.health - 1, 0)
+  end
 end
 
 function shoot_fireball(pl)
@@ -250,6 +267,13 @@ function skeltal_rect(s)
   return {
     s.x+1, s.y+1,
     s.x+6, s.y+9
+  }
+end
+
+function player_rect(pl)
+  return {
+    pl.x+0, pl.y+1,
+    pl.x+7, pl.y+7
   }
 end
 
