@@ -24,7 +24,11 @@ function new_player1()
     x = 10,
     y = 10,
     spr = 001,
-    no = 0
+    no = 0,
+    vel = {
+      x = 0,
+      y = 0
+    }
   }
 end
 
@@ -33,7 +37,11 @@ function new_player2()
     x = 100,
     y = 10,
     spr = 002,
-    no = 1
+    no = 1,
+    vel = {
+      x = 0,
+      y = 0
+    }
   }
 end
 
@@ -56,17 +64,22 @@ end
 
 function update_player(pl)
   if btn(0, pl.no) then
-    pl.x = pl.x-1
+    pl.vel.x = -1
+  elseif btn(1, pl.no) then
+    pl.vel.x = 1
+  else
+    pl.vel.x = 0
   end
-  if btn(1, pl.no) then
-    pl.x = pl.x+1
-  end
+  pl.x = pl.x + pl.vel.x
+
   if btn(2, pl.no) then
-    pl.y = pl.y-1
+    pl.vel.y = -1
+  elseif btn(3, pl.no) then
+    pl.vel.y = 1
+  else
+    pl.vel.y = 0
   end
-  if btn(3, pl.no) then
-    pl.y = pl.y+1
-  end
+  pl.y = pl.y + pl.vel.y
 end
 
 function update_entity(e)
