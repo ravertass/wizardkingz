@@ -237,32 +237,13 @@ end
 
 function intersect(rect1,rect2)
   return
-    rect_in_rect(rect1, rect2)
-    or
-    rect_in_rect(rect2, rect1)
+    intersect_intervals(rect1[1], rect1[3], rect2[1], rect2[3])
+    and
+    intersect_intervals(rect1[2], rect1[4], rect2[2], rect2[4])
 end
 
-function rect_in_rect(rect1, rect2)
-  return
-    point_intersect(
-      rect1[1], rect1[2], rect2)
-    or
-    point_intersect(
-      rect1[1], rect1[4], rect2)
-    or
-    point_intersect(
-      rect1[3], rect1[2], rect2)
-    or
-    point_intersect(
-      rect1[3], rect1[4], rect2)
-end
-
-function point_intersect(x, y, rect2)
-  return
-    x >= rect2[1] and
-    x <= rect2[3] and
-    y >= rect2[2] and
-    y <= rect2[4]
+function intersect_intervals(a_lo, a_hi, b_lo, b_hi)
+  return a_lo < b_hi and a_hi > b_lo
 end
 
 function update_entity(e)
