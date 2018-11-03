@@ -7,6 +7,7 @@ __lua__
 ---- constants ----
 
 skeltal_sprs = {064, 065}
+fireball_sprs = {128, 129}
 
 ---- init ----
 
@@ -14,6 +15,7 @@ function _init()
   pl1 = new_player1()
   pl2 = new_player2()
   enemies = {}
+  fireballs = {}
   add(enemies, new_skeltal())
   add(enemies, new_skeltal())
   add(enemies, new_skeltal())
@@ -55,6 +57,17 @@ function new_skeltal()
   }
 end
 
+function new_fireball(x, y, vel)
+  return {
+    x = x,
+    y = y,
+    vel = vel,
+    type = "fireball",
+    spr = fireball_sprs[1],
+    spr_ix = 1
+  }
+end
+
 ---- update ----
 
 function _update()
@@ -67,6 +80,7 @@ function _update()
     update_player(pl1)
     update_player(pl2)
     foreach(enemies, update_entity)
+    foreach(fireballs, update_entity)
   end
 end
 
@@ -88,6 +102,14 @@ function update_player(pl)
     pl.vel.y = 0
   end
   pl.y = pl.y + pl.vel.y
+
+  if btn(4, pl.no) then
+    vel = {
+      x = pl.vel.x + 1,
+      y = pl.vel.y + 1,
+    }
+    add(fireballs, new_fireball(pl.x, pl.y, vel))
+  end
 end
 
 function follow(target, e)
@@ -110,6 +132,8 @@ end
 function update_entity(e)
   if e.type == "skeltal" then
     update_skeltal(e)
+  elseif e.type == "fireball" then
+    update_fireball(e)
   end
 end
 
@@ -119,6 +143,11 @@ function update_skeltal(s)
   --   s.x = s.x + rnd(3) - 1.5
   --   s.y = s.y + rnd(3) - 1.5
   -- end
+end
+
+function update_fireball(f)
+  f.x += f.vel.x
+  f.y += f.vel.y
 end
 
 ---- draw ----
@@ -136,6 +165,8 @@ function _draw()
     draw_entity(pl2)
     foreach(enemies, draw_entity)
     foreach(enemies, skeltal_chew)
+    foreach(fireballs, draw_entity)
+    foreach(fireballs, update_fireball_spr)
   end
 end
 
@@ -144,6 +175,14 @@ function skeltal_chew(e)
     e.spr = skeltal_sprs[2]
   else
     e.spr = skeltal_sprs[1]
+  end
+end
+
+function update_fireball_spr(e)
+  e.spr = fireball_sprs[e.spr_ix]
+  e.spr_ix += 1
+  if e.spr_ix > #fireball_sprs then
+    e.spr_ix = 1
   end
 end
 
