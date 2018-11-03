@@ -106,7 +106,8 @@ function new_player1()
     },
     projectile_type = "fireball",
     did_shoot = false,
-    health = 100
+    health = c_max_health,
+    invincibility_counter = 60
   }
 end
 
@@ -128,7 +129,8 @@ function new_player2()
     },
     projectile_type = "lightning_ball",
     did_shoot = false,
-    health = c_max_health
+    health = c_max_health,
+    invincibility_counter = 60
   }
 end
 
@@ -253,12 +255,19 @@ function update_player(pl)
     pl.did_shoot = false
   end
 
+  update_invincibility(pl)
   player_collisions(pl)
 end
 
+function update_invincibility(pl)
+  pl.invincibility_counter = max(0, pl.invincibility_counter - 1)
+end
+
 function player_collisions(pl)
-  for skeltal in all(skeltals) do
-    player_skeltal_collision(pl, skeltal)
+  if pl.invincibility_counter == 0 then
+    for skeltal in all(skeltals) do
+      player_skeltal_collision(pl, skeltal)
+    end
   end
 end
 
@@ -266,9 +275,21 @@ function player_skeltal_collision(pl, skeltal)
   local pl_rect = player_rect(pl)
   local skeltal_rect = skeltal_rect(skeltal)
   if intersect(pl_rect, skeltal_rect) then
-    sfx(sfx_ouch, 1)
-    pl.health = max(pl.health - 1, 0)
+    take_damage(pl)
   end
+end
+
+function take_damage(pl)
+  sfx(sfx_ouch, 1)
+  pl.health = max(pl.health - 20, 0)
+  if pl.health <= 0 then
+    kill_player(pl)
+  end
+  pl.invincibility_counter = 30
+end
+
+function kill_player(pl)
+  -- TODO: Player should die
 end
 
 function shoot_fireball(pl)
@@ -506,6 +527,10 @@ function draw_entity(e)
 end
 
 function draw_player(e)
+  if (e.invincibility_counter % 3) == 1 then
+    return
+  end
+
   flip_pl = false
   if e.vel.x == 0 and e.vel.y == 0 then
     if anim_count % 6 == 0 then
