@@ -76,7 +76,7 @@ function new_skeltal()
 end
 
 function init_startscreen() 
-  mode = 0 ---- startscreen = 0 | gamescreen = 1 ----
+  mode = 1 ---- startscreen = 0 | gamescreen = 1 ----
   startscreen_game_timer_exists = false
   startscreen_game_time = time()
 end
