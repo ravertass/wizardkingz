@@ -7,8 +7,11 @@ __lua__
 ---- constants ----
 
 skeltal_sprs = {064, 065}
-
+c_startscreen_timer = "startscreen_timer"
+c_startscreen_timer_countdown_start = 3
 ---- init ----
+local timers = {}
+local startscreen_game_time = nil
 
 function _init()
   pl1 = new_player1()
@@ -17,7 +20,7 @@ function _init()
   add(enemies, new_skeltal())
   add(enemies, new_skeltal())
   add(enemies, new_skeltal())
-  mode = 1 ---- Startscreen = 0 | Gamescreen = 1 ----
+  init_startscreen()
 end
 
 function new_player1()
@@ -55,12 +58,23 @@ function new_skeltal()
   }
 end
 
+function init_startscreen() 
+  mode = 0 ---- Startscreen = 0 | Gamescreen = 1 ----
+  startscreen_game_timer_exists = false
+  startscreen_game_time = time()
+end
+
 ---- update ----
 
 function _update()
   ---- Startscreen ----
+  update_timers()
   if mode == 0 then
-    ---- do something ----
+    if btn(5) and not startscreen_game_timer_exists then
+      startscreen_game_timer_exists = true
+      startscreen_game_time = time()
+      create_startscreen_countdown()
+    end
   end
   ---- Gamescreen ----
   if mode == 1 then
@@ -68,6 +82,19 @@ function _update()
     update_player(pl2)
     foreach(enemies, update_entity)
   end
+end
+
+function create_startscreen_countdown()
+  local last_int = 0
+  add_timer(
+    c_startscreen_timer,
+    c_startscreen_timer_countdown_start,
+    nil,
+    function ()
+      mode = 1
+      startscreen_game_init = false
+    end
+  )
 end
 
 function update_player(pl)
@@ -103,6 +130,50 @@ function update_skeltal(s)
   end
 end
 
+function add_timer (name,
+    length, step_fn, end_fn,
+    start_paused)
+  local timer = {
+    length=length,
+    elapsed=0,
+    active=not start_paused,
+    step_fn=step_fn,
+    end_fn=end_fn
+  }
+  timers[name] = timer
+  return timer
+end
+
+function update_timers ()
+  local t = time()
+  local dt = t - startscreen_game_time
+  startscreen_game_time = t
+  for name,timer in pairs(timers) do
+    if timer.active then
+      timer.elapsed += dt
+      local elapsed = timer.elapsed
+      local length = timer.length
+      if elapsed < length then
+        if timer.step_fn then
+          timer.step_fn(dt,elapsed,length,timer)
+        end  
+      else
+        if timer.end_fn then
+          timer.end_fn(dt,elapsed,length,timer)
+        end
+        timer.active = false
+      end
+    end
+  end
+end
+
+function restart_timer (name, start_paused)
+  local timer = timers[name]
+  if (not timer) return
+  timer.elapsed = 0
+  timer.active = not start_paused
+end
+
 ---- draw ----
 
 function _draw()
@@ -110,6 +181,11 @@ function _draw()
   if mode == 0 then
     cls()
     print("Kingz of Wizardz", 32, 60, 7)
+    if startscreen_game_timer_exists then
+      print("Game starting in "..tostr(ceil(c_startscreen_timer_countdown_start - timers[c_startscreen_timer].elapsed)), 28, 90, 6)
+    else 
+      print("Press x to start", 32, 90, 6)
+    end
   end
   ---- Gamescreen ----
   if mode == 1 then
