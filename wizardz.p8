@@ -82,7 +82,9 @@ pl1_idle_up = {027, 028}
 pl1_idle_side = {043, 044} ]]
 
 pl_acc = 0.3
-pl_max_vel_squared = 1
+pl_max_vel = 1
+
+projectile_max_vel = 3
 
 anim_count = 0
 c_max_health = 100
@@ -330,11 +332,7 @@ function update_player_pos(pl)
   pl.vel.x += pl.acc.x
   pl.vel.y += pl.acc.y
 
-  if pl.vel.x * pl.vel.x + pl.vel.y * pl.vel.y > pl_max_vel_squared then
-    a = atan2(pl.vel.x, pl.vel.y)
-    pl.vel.x = cos(a)
-    pl.vel.y = sin(a)
-  end
+  clamp_velocity(pl.vel, pl_max_vel)
 
   pl.x = pl.x + pl.vel.x
   pl.y = pl.y + pl.vel.y
@@ -342,6 +340,14 @@ function update_player_pos(pl)
   if pl.vel.x != 0 or pl.vel.y != 0 then
     pl.dir.x = sign(pl.vel.x)
     pl.dir.y = sign(pl.vel.y)
+  end
+end
+
+function clamp_velocity(vel, max_val)
+  if vel.x * vel.x + vel.y * vel.y > max_val * max_val then
+    a = atan2(vel.x, vel.y)
+    vel.x = cos(a) * max_val
+    vel.y = sin(a) * max_val
   end
 end
 
@@ -376,9 +382,10 @@ end
 
 function shoot_fireball(pl)
   vel = {
-    x = pl.vel.x + 2 * pl.dir.x,
-    y = pl.vel.y + 2 * pl.dir.y,
+    x = 3 * pl.dir.x,
+    y = 3 * pl.dir.y,
   }
+  clamp_velocity(vel, projectile_max_vel)
   add(projectiles, new_projectile(pl.x, pl.y, vel, pl.projectile_type))
   sfx(sfx_shoot[pl.projectile_type], 2)
 end
