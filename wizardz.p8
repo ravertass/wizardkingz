@@ -123,16 +123,20 @@ function update_player(pl)
 
   if btn(4, pl.no) then
     if not pl.did_shoot then
-      vel = {
-        x = pl.vel.x + 2 * pl.dir.x,
-        y = pl.vel.y + 2 * pl.dir.y,
-      }
-      add(fireballs, new_fireball(pl.x, pl.y, vel))
+      shoot_fireball(pl)
+      pl.did_shoot = true
     end
-    pl.did_shoot = true
   else
     pl.did_shoot = false
   end
+end
+
+function shoot_fireball(pl)
+  vel = {
+    x = pl.vel.x + 2 * pl.dir.x,
+    y = pl.vel.y + 2 * pl.dir.y,
+  }
+  add(fireballs, new_fireball(pl.x, pl.y, vel))
 end
 
 function follow(target, e)
@@ -219,7 +223,12 @@ end
 
 function draw_fireball(e)
   flip_x = e.vel.x < 0
-  spr(e.spr, e.x, e.y, 1, 1, flip_x)
+  flip_y = e.vel.y < 0
+  _spr = e.spr
+  if e.vel.x == 0 then
+    _spr += 16
+  end
+  spr(_spr, e.x, e.y, 1, 1, flip_x, flip_y)
 end
 
 
