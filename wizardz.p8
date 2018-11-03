@@ -198,8 +198,8 @@ end
 
 function new_skeltal()
   return {
-    x = rnd(128),
-    y = rnd(128),
+    x = rnd(104)+8,
+    y = rnd(72)+32,
     vel = {
       x = 0,
       y = 0
