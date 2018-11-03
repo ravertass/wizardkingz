@@ -103,6 +103,7 @@ function _init()
   pl2 = new_player2()
   skeltals = {}
   projectiles = {}
+  fire_particles = {}
   add(skeltals, new_skeltal())
   add(skeltals, new_skeltal())
   add(skeltals, new_skeltal())
@@ -426,6 +427,48 @@ function move(e)
   e.y += dy
 end
 
+function kill(target, wpn)
+  sfx(sfx_expl, 2)
+  del(skeltals, target)
+  del(projectiles, wpn)
+  add(skeltals, new_skeltal())
+  add(skeltals, new_skeltal())
+  create_skeltal_particles(skeltal, wpn)
+end
+
+cols_skeltal = {7,8,9}
+function create_skeltal_particles(skeltal, fireball)
+  local x = skeltal.x+3
+  local y = skeltal.y+3
+  local dxoffs=skeltal.vel.x+cos(2)*fireball.vel.x
+  local dyoffs=skeltal.vel.y+sin(2)*fireball.vel.x
+  for i = 1, 5 do
+    add(fire_particles, create_fire_particle(x, y, dxoffs, dyoffs, cols_skeltal[flr(rnd(3))+1]))
+  end
+end
+
+function create_fire_particle(x, y, dxoffs, dyoffs, col)
+  return {
+    x = x,
+    y = y,
+    col = col,
+    dx = rnd(2)-1+dxoffs,
+    dy = -rnd(1)+dyoffs,
+    ddy = 0.1,
+    count = 30
+ }
+end
+
+function update_fire_particle(particle)
+  particle.x += particle.dx
+  particle.y += particle.dy
+  particle.dy += particle.ddy
+  particle.count -= 1
+  if particle.count < 1 then
+    del(fire_particles, particle)
+  end
+end
+
 function fireball_collision(fireball)
   for i = 1, #skeltals do
     skeltal = skeltals[i]
@@ -434,11 +477,7 @@ function fireball_collision(fireball)
       {fireball.x+1, fireball.y+2,
         fireball.x+6, fireball.y+6})
     then
-      sfx(sfx_expl, 2)
-      del(skeltals, skeltal)
-      del(projectiles, fireball)
-      add(skeltals, new_skeltal())
-      add(skeltals, new_skeltal())
+      kill(skeltal, fireball)
       return
     end
   end
@@ -586,6 +625,8 @@ function draw_gamescreen()
   foreach(skeltals, skeltal_chew)
   foreach(projectiles, draw_entity)
   foreach(projectiles, update_projectile_spr)
+  foreach(fire_particles, update_fire_particle)
+  foreach(fire_particles, draw_fire_particle)
   draw_manabars()
   draw_healthbars()
 end
@@ -701,6 +742,10 @@ function draw_projectile(e)
   for i = 0, 5 do
     add_particle(e)
   end
+end
+
+function draw_fire_particle(particle)
+  circ(particle.x, particle.y, 0, particle.col)
 end
 
 function add_particle(e)
