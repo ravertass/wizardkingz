@@ -17,6 +17,7 @@ function _init()
   add(enemies, new_skeltal())
   add(enemies, new_skeltal())
   add(enemies, new_skeltal())
+  mode = 1 ---- Startscreen = 0 | Gamescreen = 1 ----
 end
 
 function new_player1()
@@ -49,9 +50,16 @@ end
 ---- update ----
 
 function _update()
-  update_player(pl1)
-  update_player(pl2)
-  foreach(enemies, update_entity)
+  ---- Startscreen ----
+  if mode == 0 then
+    ---- do something ----
+  end
+  ---- Gamescreen ----
+  if mode == 1 then
+    update_player(pl1)
+    update_player(pl2)
+    foreach(enemies, update_entity)
+  end
 end
 
 function update_player(pl)
@@ -85,11 +93,19 @@ end
 ---- draw ----
 
 function _draw()
-  cls()
-  draw_entity(pl1)
-  draw_entity(pl2)
-  foreach(enemies, draw_entity)
-  foreach(enemies, update_skeltal_spr)
+  ---- Startscreen ----
+  if mode == 0 then
+    cls()
+    print("Kingz of Wizardz", 32, 60, 7)
+  end
+  ---- Gamescreen ----
+  if mode == 1 then
+    cls()
+    draw_entity(pl1)
+    draw_entity(pl2)
+    foreach(enemies, draw_entity)
+    foreach(enemies, update_skeltal_spr)
+  end
 end
 
 function update_skeltal_spr(e)
