@@ -20,6 +20,14 @@ function indexof(e, list)
   end
 end
 
+function posneg()
+  if rnd(1) > 0.5 then
+    return 1
+  else
+    return -1
+  end
+end
+
 ---- diagnostics ----
 
 c_perf_names = {"update", "draw"}
@@ -1075,9 +1083,9 @@ end
 
 function draw_spawn_creature(e)
   if e.spawn_frame_count < 15 then 
-    spr(e.spawn_sprs[1], e.x, e.y, 1, 1)
+    spr(e.spawn_sprs[1], e.x+posneg(), e.y+posneg(), 1, 1)
   else
-    spr(e.spawn_sprs[2], e.x, e.y, 1, 1)
+    spr(e.spawn_sprs[2], e.x+posneg(), e.y+posneg(), 1, 1)
   end
   e.spawn_frame_count += 1
 end
