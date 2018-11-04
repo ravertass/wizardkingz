@@ -542,7 +542,7 @@ function create_expl_particles(target, wpn)
   if target.type == 'skeltal' then
     cols = {7,8,10}
   else
-    cols = {3,4,5}
+    cols = {7,9,12}
   end
 
   local x = target.x+3
