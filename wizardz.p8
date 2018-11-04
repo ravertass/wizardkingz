@@ -132,11 +132,12 @@ function _init()
   skeltals = {}
   humans = {}
   projectiles = {}
-  fire_particles = {}
+  expl_particles = {}
   baits = {}
   add_skeltal()
   add_skeltal()
-  add_skeltal()
+  add_human()
+  add_human()
   init_startscreen()
   music(c_song_1)
 end
@@ -309,6 +310,7 @@ function _update()
     update_player(pl2)
     foreach(baits, update_entity)
     foreach(skeltals, update_entity)
+    foreach(humans, update_entity)
     foreach(projectiles, update_entity)
   end
   ---- diagnostics ----
@@ -450,7 +452,7 @@ end
 
 function player_skeltal_collision(pl, skeltal)
   local pl_rect = player_rect(pl)
-  local skeltal_rect = skeltal_rect(skeltal)
+  local skeltal_rect = enemy_rect(skeltal)
   if intersect(pl_rect, skeltal_rect) then
     take_damage(pl)
   end
@@ -506,27 +508,41 @@ function move(e)
   e.y += dy
 end
 
-function kill(target, wpn)
+function kill_skeltal(s, wpn)
   sfx(sfx_expl, 2)
-  del(skeltals, target)
+  del(skeltals, s)
   del(projectiles, wpn)
   add_skeltal()
   add_skeltal()
-  create_skeltal_particles(skeltal, wpn)
+  create_expl_particles(s, wpn)
 end
 
-cols_skeltal = {7,8,10}
-function create_skeltal_particles(skeltal, fireball)
-  local x = skeltal.x+3
-  local y = skeltal.y+3
-  local dxoffs = skeltal.vel.x + 0.5*fireball.vel.x
-  local dyoffs = skeltal.vel.y + 0.5*fireball.vel.y
+function kill_human(h, wpn)
+  sfx(sfx_expl, 2)
+  del(humans, h)
+  del(projectiles, wpn)
+  add_human()
+  add_human()
+  create_expl_particles(h, wpn)
+end
+
+function create_expl_particles(target, wpn)
+  if target.type == 'skeltal' then
+    cols = {7,8,10}
+  else
+    cols = {3,4,5}
+  end
+
+  local x = target.x+3
+  local y = target.y+3
+  local dxoffs = target.vel.x + 0.5*wpn.vel.x
+  local dyoffs = target.vel.y + 0.5*wpn.vel.y
   for i = 1, 5 do
-    add(fire_particles, create_fire_particle(x, y, dxoffs, dyoffs, cols_skeltal[flr(rnd(3))+1]))
+    add(expl_particles, create_expl_particle(x, y, dxoffs, dyoffs, cols[flr(rnd(3))+1]))
   end
 end
 
-function create_fire_particle(x, y, dxoffs, dyoffs, col)
+function create_expl_particle(x, y, dxoffs, dyoffs, col)
   return {
     x = x,
     y = y,
@@ -538,13 +554,13 @@ function create_fire_particle(x, y, dxoffs, dyoffs, col)
  }
 end
 
-function update_fire_particle(particle)
+function update_expl_particle(particle)
   particle.x += particle.dx
   particle.y += particle.dy
   particle.dy += particle.ddy
   particle.count -= 1
   if particle.count < 1 then
-    del(fire_particles, particle)
+    del(expl_particles, particle)
   end
 end
 
@@ -552,17 +568,31 @@ function fireball_collision(fireball)
   for i = 1, #skeltals do
     skeltal = skeltals[i]
     if intersect(
-      skeltal_rect(skeltal),
+      enemy_rect(skeltal),
       {fireball.x+1, fireball.y+2,
         fireball.x+6, fireball.y+6})
     then
-      kill(skeltal, fireball)
+      kill_skeltal(skeltal, fireball)
       return
     end
   end
 end
 
-function skeltal_rect(s)
+function iceball_collision(iceball)
+  for i = 1, #humans do
+    human = humans[i]
+    if intersect(
+      enemy_rect(human),
+      {iceball.x+1, iceball.y+2,
+        iceball.x+6, iceball.y+6})
+    then
+      kill_human(human, iceball)
+      return
+    end
+  end
+end
+
+function enemy_rect(s)
   return {
     s.x+1, s.y+1,
     s.x+6, s.y+9
@@ -590,6 +620,8 @@ end
 function update_entity(e)
   if e.type == "skeltal" then
     update_skeltal(e)
+  elseif e.type == "human" then
+    update_human(e)
   elseif e.type == "projectile" then
     update_projectile(e)
   elseif e.type == "bait" then
@@ -605,6 +637,19 @@ function update_skeltal(s)
   elseif action == 9 then
     s.x = s.x + rnd(2) - 1
     s.y = s.y + rnd(2) - 1
+  else
+    -- do nothing
+  end
+end
+
+function update_human(h)
+  local action = flr(rnd(10))
+  if action <= 8 then
+    target = select_target(h)
+    follow(target, h)
+  elseif action == 9 then
+    h.x = h.x + rnd(2) - 1
+    h.y = h.y + rnd(2) - 1
   else
     -- do nothing
   end
@@ -652,6 +697,9 @@ function update_projectile(f)
   end
   if f.projectile_type == 'fireball' then
     fireball_collision(f)
+  end
+  if f.projectile_type == 'lightning_ball' then
+    iceball_collision(f)
   end
 end
 
@@ -757,8 +805,8 @@ function draw_gamescreen()
   draw_players()
   foreach(projectiles, draw_entity)
   foreach(projectiles, update_projectile_spr)
-  foreach(fire_particles, update_fire_particle)
-  foreach(fire_particles, draw_fire_particle)
+  foreach(expl_particles, update_expl_particle)
+  foreach(expl_particles, draw_expl_particle)
   draw_manabars()
   draw_healthbars()
 end
@@ -902,7 +950,7 @@ function draw_projectile(e)
   end
 end
 
-function draw_fire_particle(particle)
+function draw_expl_particle(particle)
   circ(particle.x, particle.y, 0, particle.col)
 end
 
