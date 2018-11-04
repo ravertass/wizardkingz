@@ -459,9 +459,12 @@ function handle_magic(pl)
 end
 
 function handle_bait(pl)
-  if btn(4, pl.no) and pl.active_baits == 0 then
-    leave_bait(pl)
-    pl.active_baits += 1
+  if btn(4, pl.no) then
+    if pl.powerup_type == "bait" then
+      leave_bait(pl)
+      pl.active_baits += 1
+      pl.powerup_type = 0
+    end
   end
 end
 
