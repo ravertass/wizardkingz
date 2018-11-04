@@ -524,6 +524,7 @@ function pickup_chest(pl, chest)
   pl.powerup_type = chest.type
   chest.spr = chest_open_spr
   chest.remove_counter = 40
+  chest.player = pl.no
 end
 
 function player_enemy_collisions(pl)
@@ -883,7 +884,8 @@ function new_chest()
     y = rnd(72)+32,
     remove_counter = -1,
     type = chest_types[flr(rnd(#chest_types))+1],
-    spr = chest_closed_spr
+    spr = chest_closed_spr,
+    player = -1 -- used to know what powerup should be drawn
   })
 end
 
@@ -940,7 +942,7 @@ function draw_gamescreen()
   draw_environment()
   foreach(baits, update_bait_spr)
   foreach(baits, draw_entity)
-  foreach(chests, draw_entity)
+  foreach(chests, draw_chest)
   draw_fences()
   draw_enemies()
   draw_players()
@@ -1045,6 +1047,22 @@ function update_bait_spr(e)
     e.spr_ix = 1
   end
   e.spr = e.sprs[ceil(e.spr_ix/10)]
+end
+
+function draw_chest(c)
+  spr(c.spr, c.x, c.y)
+
+  if c.remove_counter != -1 and (c.remove_counter % 4) > 0 then
+    local powerup_sprite
+    if c.type == "bait" then
+      if c.player == 0 then
+        powerup_sprite = powerup_spr["meat"]
+      else
+        powerup_sprite = powerup_spr["cat"]
+      end
+    end
+    spr(powerup_sprite, c.x, c.y - 10)
+  end
 end
 
 function draw_entity(e)
