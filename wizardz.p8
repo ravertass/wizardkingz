@@ -84,7 +84,8 @@ c_original_max_mana = 30
 projectile_sprs = {
   fireball = {128, 129},
   lightning_ball = {132, 133, 134},
-  bone = {070, 071}
+  bone = {070, 071},
+  star = {086, 087}
 }
 
 bait_spr = {
@@ -346,7 +347,7 @@ function init_gamescreen()
   baits = {}
   chests = {}
 
-  add_skeltal_ranged()
+  add_skeltal()
   add_human()
 
   music(c_song_1)
@@ -747,8 +748,14 @@ function kill_skeltal(s, wpn)
   sfx(sfx_expl, 2)
   del(skeltals, s)
   del(projectiles, wpn)
-  add_human()
-  add_human()
+  for x = 1,2 do
+    spawn_action = ceil(rnd(10))
+    if spawn_action > 9 then
+      add_human_ranged()
+    else
+      add_human()
+    end
+  end
   create_expl_particles(s, wpn)
 end
 
@@ -756,8 +763,14 @@ function kill_human(h, wpn)
   sfx(sfx_expl, 2)
   del(humans, h)
   del(projectiles, wpn)
-  add_skeltal()
-  add_skeltal()
+  for x = 1,2 do
+    spawn_action = ceil(rnd(10))
+    if spawn_action > 9 then
+      add_skeltal_ranged()
+    else
+      add_skeltal()
+    end
+  end
   create_expl_particles(h, wpn)
 end
 
@@ -909,7 +922,11 @@ function update_enemy(e)
     elseif e.attack_type == 'ranged' then
       if action <= 1 and e.last_projectile + 2 < time() then
         e.last_projectile = time()
-        add_creature_projectile(e, 'bone')
+        if e.type == 'skeltal' then
+          add_creature_projectile(e, 'bone')
+        else
+          add_creature_projectile(e, 'star')
+        end
       elseif action <= 5 then
         target = select_target(e)
         follow(target, e)
