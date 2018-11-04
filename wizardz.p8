@@ -689,7 +689,7 @@ function check_dead(pl)
 end
 
 function death_scene(e)
-  cols = {8, 9, 10}
+  local cols = {8, 9, 10}
   spr(death_fire[death_counter], e.x, e.y, 1, 1, death_fire_flip)
   add(expl_particles, create_expl_particle(e.x + 4, e.y + 4, 0, -1, cols[flr(rnd(3))+1]))
   --[[ death_counter += 1 ]]
@@ -780,10 +780,13 @@ function create_expl_particles(target, wpn)
     cols = {7,8,10}
   elseif target.type == 'human' then
     cols = {7,9,12}
-  elseif wpn.projectile_type == 'bone' then
-    cols = {7}
   end
 
+  if wpn.projectile_type == 'bone' then
+    cols = {7}
+  elseif wpn.projectile_type == 'star' then
+    cols = {5}
+  end
 
   local x = target.x+3
   local y = target.y+3
@@ -798,10 +801,10 @@ function create_expl_particles(target, wpn)
     wpn_vel_x = wpn.vel.x
     wpn_vel_y = wpn.vel.y
   end
-  
+
   local dxoffs = target.vel.x + 0.5*wpn_vel_x
   local dyoffs = target.vel.y + 0.5*wpn_vel_y
-  
+
   for i = 1, 5 do
     add(expl_particles, create_expl_particle(x, y, dxoffs, dyoffs, cols[flr(rnd(3))+1]))
   end
