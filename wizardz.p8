@@ -78,6 +78,7 @@ human_sprs = {080, 081}
 human_spawn_sprs = {088, 089}
 c_startscreen_timer = "startscreen_timer"
 c_startscreen_timer_countdown_start = 1
+c_original_max_mana = 30
 projectile_sprs = {
   fireball = {128, 129},
   lightning_ball = {132, 133, 134}
@@ -168,7 +169,8 @@ function new_player1()
     bait_type = "meat",
     active_baits = 0,
     shoot_counter = 10,
-    mana = c_max_mana,
+    c_max_mana = c_original_max_mana,
+    mana = c_original_max_mana,
     mana_punishment_counter = 0,
     health = c_max_health,
     invincibility_counter = 60,
@@ -207,7 +209,8 @@ function new_player2()
     bait_type = "cat",
     active_baits = 0,
     shoot_counter = 10,
-    mana = c_max_mana,
+    c_max_mana = c_original_max_mana,
+    mana = c_original_max_mana,
     mana_punishment_counter = 0,
     health = c_max_health,
     invincibility_counter = 60,
@@ -431,7 +434,7 @@ function handle_magic(pl)
   if pl.mana_punishment_counter > 0 then
     pl.mana_punishment_counter -= 1
   else
-    pl.mana = min(c_max_mana, pl.mana + 0.5)
+    pl.mana = min(pl.c_max_mana, pl.mana + 0.5)
     if btn(5, pl.no) and pl.shoot_counter == 0 and pl.mana > 10 then
       shoot_straight_fireball(pl)
       pl.mana -= 20
@@ -1142,19 +1145,19 @@ function draw_manabars()
 end
 
 function draw_manabar(pl, x)
-  local col = manabar_color(pl.mana, pl.mana_punishment_counter)
-  local x_end = x + (pl.mana/c_max_mana)*40
+  local col = manabar_color(pl)
+  local x_end = x + (pl.mana/pl.c_max_mana)*40
   if (pl.mana_punishment_counter % 4) == 0 then
     rectfill(x, 120, x_end, 121, col)
   end
 end
 
-function manabar_color(mana, punishment_counter)
-  if punishment_counter > 0 then
+function manabar_color(pl)
+  if pl.mana_punishment_counter > 0 then
     return 14
-  elseif mana > ((2*c_max_mana)/3) then
+  elseif pl.mana > ((2*pl.c_max_mana)/3) then
     return 12
-  elseif mana > (c_max_mana/3) then
+  elseif pl.mana > (pl.c_max_mana/3) then
     return 13
   else
     return 1
