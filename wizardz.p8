@@ -495,11 +495,11 @@ function update_player_acc(pl)
       pl.acc.x = 0
     end
     pl.x = pl.x + pl.vel.x
-    if pl.x <= 8 then
-      pl.x = 8
+    if pl.x <= 4 then
+      pl.x = 4
     end
-    if pl.x >= 112 then
-      pl.x = 112
+    if pl.x >= 116 then
+      pl.x = 116
     end
 
     if btn(2, pl.no) then
@@ -510,11 +510,11 @@ function update_player_acc(pl)
       pl.acc.y = 0
     end
     pl.y = pl.y + pl.vel.y
-    if pl.y <= 30 then
-      pl.y = 30
+    if pl.y <= 28 then
+      pl.y = 28
     end
-    if pl.y >= 104 then
-      pl.y = 104
+    if pl.y >= 109 then
+      pl.y = 109
     end
   else
     pl.vel.x = 0
@@ -1169,11 +1169,11 @@ function draw_gamescreen()
   foreach(baits, update_bait_spr)
   foreach(baits, draw_entity)
   foreach(chests, draw_entity)
-  draw_fences()
   draw_enemies()
   draw_players()
   foreach(creature_projectiles, draw_entity)
   foreach(creature_projectiles, update_projectile_spr)
+  draw_bottom_fences()
   foreach(projectiles, draw_entity)
   foreach(projectiles, update_projectile_spr)
   foreach(expl_particles, update_expl_particle)
@@ -1498,19 +1498,13 @@ function healthbar_color(health)
 end
 
 function draw_fences()
----- corners ----
+---- top corners ----
   spr(fence_sprs[4], 0, 24, 1, 1, true)
   spr(fence_sprs[4], 120, 24, 1, 1, false)
-  spr(fence_sprs[5], 0, 112, 1, 1, true)
-  spr(fence_sprs[5], 120, 112, 1, 1, false)
 
 ---- top row ----
   for i = 1,14 do
     spr(fence_sprs[1], 8 * i, 24)
-  end
----- bottom row ----
-  for i = 1,14 do
-    spr(fence_sprs[1], 8 * i, 112, 1, 1, false)
   end
 ---- left row ----
   for i = 1,10 do
@@ -1522,14 +1516,25 @@ function draw_fences()
   end
 end
 
-function draw_houses() 
+function draw_bottom_fences()
+---- bottom corners ----
+  spr(fence_sprs[5], 0, 112, 1, 1, true)
+  spr(fence_sprs[5], 120, 112, 1, 1, false)
+
+---- bottom row ----
+  for i = 1,14 do
+    spr(fence_sprs[1], 8 * i, 112, 1, 1, false)
+  end
+end
+
+function draw_houses()
   spr(house_sprs[ceil(house_animation_index/10)], 72, 16)
   if house_countdown > 100 and house_countdown < 100 + 30 then
     house_animation_index += 1
     if house_animation_index > 29 then
       house_animation_index = 1
     end
-  else 
+  else
     house_animation_index = 20
   end
   spr(house1_sprs[ceil(house1_animation_index/10)], 96, 16)
