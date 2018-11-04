@@ -429,7 +429,7 @@ end
 
 function update_startscreen()
   update_timers()
-  if btn(5) and not startscreen_game_timer_exists then
+  if (btnp(4) or btnp(5)) and not startscreen_game_timer_exists then
     startscreen_game_timer_exists = true
     startscreen_game_time = time()
     create_startscreen_countdown()
@@ -450,7 +450,7 @@ function update_gamescreen()
 end
 
 function update_gameover()
-  if btn(4) then
+  if btnp(4) or btnp(5) then
     _init()
   end
 end
@@ -1159,7 +1159,7 @@ function draw_startscreen()
   if startscreen_game_timer_exists then
     print("game starting in "..tostr(ceil(c_startscreen_timer_countdown_start - timers[c_startscreen_timer].elapsed)), 28, 102, 6)
   else
-    print("press x to start", 32, 102, 6)
+    print("press button to start", 21, 102, 6)
   end
 end
 
@@ -1223,7 +1223,7 @@ function draw_gameoverscreen()
     spr(pl2.pl1_idle[1], 58, 40)
     print("player 2 wins", 38, 60, 7)
   end
-  print("press z to continue", 28, 90, 6)
+  print("press button to continue", 16, 90, 6)
 end
 
 function draw_environment()
