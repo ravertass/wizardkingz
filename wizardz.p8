@@ -514,7 +514,7 @@ end
 
 function player_chest_collisions(pl)
   for chest in all(chests) do
-    if intersect(player_rect(pl), chest_rect(chest)) then
+    if chest.remove_counter == -1 and intersect(player_rect(pl), chest_rect(chest)) then
       pickup_chest(pl, chest)
     end
   end
