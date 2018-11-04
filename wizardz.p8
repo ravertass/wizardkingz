@@ -90,6 +90,7 @@ bait_spr = {
 }
 
 powerup_spr = {
+  mana = 83,
   meat = 99,
   cat = 98
 }
@@ -97,7 +98,7 @@ powerup_spr = {
 chest_closed_spr = 112
 chest_open_spr = 113
 
-chest_types = {"bait"}
+chest_types = {"bait", "mana"}
 
 skull_spr = {205}
 skull_fx_sprs = {202, 203, 204}
@@ -127,7 +128,6 @@ c_bait_lifetime = 150
 
 anim_count = 0
 c_max_health = 100
-c_max_mana = 100
 
 ---- environment ----
 fence_sprs = {192, 193, 194, 195, 211}
@@ -176,7 +176,7 @@ function new_player1()
     bait_type = "meat",
     active_baits = 0,
     shoot_counter = 10,
-    c_max_mana = c_original_max_mana,
+    max_mana = c_original_max_mana,
     mana = c_original_max_mana,
     mana_punishment_counter = 0,
     health = c_max_health,
@@ -217,7 +217,7 @@ function new_player2()
     bait_type = "cat",
     active_baits = 0,
     shoot_counter = 10,
-    c_max_mana = c_original_max_mana,
+    max_mana = c_original_max_mana,
     mana = c_original_max_mana,
     mana_punishment_counter = 0,
     health = c_max_health,
@@ -443,7 +443,7 @@ function handle_magic(pl)
   if pl.mana_punishment_counter > 0 then
     pl.mana_punishment_counter -= 1
   else
-    pl.mana = min(pl.c_max_mana, pl.mana + 0.5)
+    pl.mana = min(pl.max_mana, pl.mana + 0.5)
     if btn(5, pl.no) and pl.shoot_counter == 0 and pl.mana > 10 then
       shoot_straight_fireball(pl)
       pl.mana -= 20
@@ -521,7 +521,14 @@ function player_chest_collisions(pl)
 end
 
 function pickup_chest(pl, chest)
-  pl.powerup_type = chest.type
+  if chest.type == "mana" then
+    pl.max_mana += 30
+    pl.mana_punishment_counter = 0
+    pl.mana = pl.max_mana
+  else
+    pl.powerup_type = chest.type
+  end
+
   chest.spr = chest_open_spr
   chest.remove_counter = 40
   chest.player = pl.no
@@ -1060,6 +1067,8 @@ function draw_chest(c)
       else
         powerup_sprite = powerup_spr["cat"]
       end
+    elseif c.type == "mana" then
+      powerup_sprite = powerup_spr["mana"]
     end
     spr(powerup_sprite, c.x, c.y - 10)
   end
@@ -1201,18 +1210,18 @@ end
 
 function draw_manabar(pl, x)
   local col = manabar_color(pl)
-  local x_end = x + (pl.mana/pl.c_max_mana)*40
+  local x_end = x + (pl.mana/pl.max_mana)*40
   if (pl.mana_punishment_counter % 4) == 0 then
-    rectfill(x, 120, x_end, 121, col)
+    rectfill(x, 122, x_end, 122, col)
   end
 end
 
 function manabar_color(pl)
   if pl.mana_punishment_counter > 0 then
     return 14
-  elseif pl.mana > ((2*pl.c_max_mana)/3) then
+  elseif pl.mana > ((2*pl.max_mana)/3) then
     return 12
-  elseif pl.mana > (pl.c_max_mana/3) then
+  elseif pl.mana > (pl.max_mana/3) then
     return 13
   else
     return 1
@@ -1220,16 +1229,16 @@ function manabar_color(pl)
 end
 
 function draw_healthbars()
-  print("p1", 52, 120, 12)
+  print("p1", 52, 122, 12)
   draw_healthbar(pl1, 8)
-  print("p2", 70, 120, 8)
+  print("p2", 70, 122, 8)
   draw_healthbar(pl2, 80)
 end
 
 function draw_healthbar(pl, x)
   local col = healthbar_color(pl.health)
   local x_end = x + (pl.health/c_max_health)*40
-  rectfill(x, 122, x_end, 124, col)
+  rectfill(x, 123, x_end, 126, col)
 end
 
 function healthbar_color(health)
@@ -1351,12 +1360,12 @@ __gfx__
 00777000007770000555555505555555007770006077706006000060000767000000000004400054000000000000000000000000000000000000000000000000
 00707000007070000155551001555510006060000060600000000000000606000000000000000005000000000000000000000000000000000000000000000000
 00444440000000000000000000000000005555000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00f1f1000044444000000000000000000051f1000055550000000d000000d0000400000004000044000000000000000000000000000000000000000000000000
-00ffff0000f1f1000000000000000000005555000051f1000dd0dd000000d0000040000000500450000000000000000000000000000000000000000000000000
-00ff000000ffff000000000000000000105500100055550005ddd5000dddd0000049000000453400000000000000000000000000000000000000000000000000
-00ffff0000ffff0000000000000000000155550000555500005ddd00055dddd00000440000044400000000000000000000000000000000000000000000000000
-00999000009990000000000000000000005550000155510000dd5dd0000d55500000040000940940000000000000000000000000000000000000000000000000
-0099900000999000000000000000000000ddd00010ddd01000d50550000d00000000000004400054000000000000000000000000000000000000000000000000
+00f1f1000044444000000000000600000051f1000055550000000d000000d0000400000004000044000000000000000000000000000000000000000000000000
+00ffff0000f1f10000000000000c0000005555000051f1000dd0dd000000d0000040000000500450000000000000000000000000000000000000000000000000
+00ff000000ffff0000000000006cc000105500100055550005ddd5000dddd0000049000000453400000000000000000000000000000000000000000000000000
+00ffff0000ffff0000000000067ccc000155550000555500005ddd00055dddd00000440000044400000000000000000000000000000000000000000000000000
+0099900000999000000000000ccccd00005550000155510000dd5dd0000d55500000040000940940000000000000000000000000000000000000000000000000
+00999000009990000000000000dcd00000ddd00010ddd01000d50550000d00000000000004400054000000000000000000000000000000000000000000000000
 00303000003030000000000000000000005050000050500000500000000500000000000000000005000000000000000000000000000000000000000000000000
 00000560000000000000000000000000001111000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00099976000000000005050000007000001878000011110000000000000000000000000000000000000000000000000000000000000000000000000000000000
