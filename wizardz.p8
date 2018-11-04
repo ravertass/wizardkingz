@@ -775,16 +775,33 @@ function kill_human(h, wpn)
 end
 
 function create_expl_particles(target, wpn)
+  local cols
   if target.type == 'skeltal' then
     cols = {7,8,10}
-  else
+  elseif target.type == 'human' then
     cols = {7,9,12}
+  elseif wpn.projectile_type == 'bone' then
+    cols = {7}
   end
+
 
   local x = target.x+3
   local y = target.y+3
-  local dxoffs = target.vel.x + 0.5*wpn.vel.x
-  local dyoffs = target.vel.y + 0.5*wpn.vel.y
+  local dxoffs
+  local dyoffs
+  local wpn_vel_x
+  local wpn_vel_y
+  if wpn.projectile_type == 'bone' or wpn.projectile_type == 'star' then
+    wpn_vel_x = cos(wpn.dir)*wpn.speed
+    wpn_vel_y = sin(wpn.dir)*wpn.speed
+  else
+    wpn_vel_x = wpn.vel.x
+    wpn_vel_y = wpn.vel.y
+  end
+  
+  local dxoffs = target.vel.x + 0.5*wpn_vel_x
+  local dyoffs = target.vel.y + 0.5*wpn_vel_y
+  
   for i = 1, 5 do
     add(expl_particles, create_expl_particle(x, y, dxoffs, dyoffs, cols[flr(rnd(3))+1]))
   end
@@ -830,7 +847,7 @@ function wpn_collision(wpn)
   elseif wpn.projectile_type == 'lightning_ball' then
     lightning_collision(wpn)
   elseif wpn.projectile_type == 'bone' then
-    --ai_wpn_collision(wpn, pl1)
+    ai_wpn_collision(wpn, pl1)
   elseif wpn.projectile_type == 'star' then
     ai_wpn_collision(wpn, pl2)
   else
@@ -839,10 +856,11 @@ function wpn_collision(wpn)
 end
 
 function ai_wpn_collision(wpn, pl)
-  if wpn_hit(bone, target) then
-    take_damage(target)
-    create_expl_particles(target, wpn)
-    del(projectiles, wpn)
+  if pl.invincibility_counter == 0 then
+    if wpn_hit(wpn, pl) then
+      take_damage(pl)
+      create_expl_particles(pl, wpn)
+    end
   end
 end
 
@@ -947,6 +965,7 @@ function update_creature_projectile(e)
   local dy=sin(e.dir)*e.speed
   e.x += dx
   e.y += dy 
+  wpn_collision(e)
 end
 
 function spawn_creature(c) 
