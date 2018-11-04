@@ -226,6 +226,7 @@ function add_human()
     spawn_sprs = human_spawn_sprs,
     spawn_time = time(),
     spawned = false,
+    spawn_frame_count = 1,
   })
 end
 
@@ -243,6 +244,7 @@ function add_skeltal()
     spawn_sprs = skeltal_spawn_sprs,
     spawn_time = time(),
     spawned = false,
+    spawn_frame_count = 1,
   })
 end
 
@@ -262,8 +264,6 @@ function init_gamescreen()
   expl_particles = {}
   baits = {}
   add_skeltal()
-  add_skeltal()
-  add_human()
   add_human()
   music(c_song_1)
 end
@@ -683,9 +683,7 @@ function update_skeltal(s)
       -- do nothing
     end
   else
-    if flr(s.spawn_time)+1 <= time() then
-      s.spawned = true
-    end
+    spawn_creature(s)
   end
 end
 
@@ -702,13 +700,15 @@ function update_human(h)
       -- do nothing
     end
   else
-    if flr(h.spawn_time)+1 <= time() then
-      h.spawned = true
-    end
+    spawn_creature(h)
   end
 end
 
-----function spawn_
+function spawn_creature(c) 
+    if flr(c.spawn_time)+1 <= time() then
+      c.spawned = true
+    end
+end
 
 function select_target(s)
   local targets = get_targets(s)
@@ -951,8 +951,8 @@ end
 function draw_entity(e)
   if e.type == "projectile" then
     draw_projectile(e)
-  elseif e.type == 'skeltal' then
-    draw_skeltal(e)
+  elseif e.type == 'skeltal' or e.type == 'human' then
+    draw_enemy(e)
   elseif e.type == 'player' then
     draw_player(e)
   else
@@ -1013,9 +1013,22 @@ function animate_player(e, anims)
   e.spr = anims[e.spr_ix]
 end
 
-function draw_skeltal(e)
-  flip_x = e.vel.x < 0
-  spr(e.spr, e.x, e.y, 1, 1, flip_x)
+function draw_enemy(e)
+  if e.spawned then
+    flip_x = e.vel.x < 0
+    spr(e.spr, e.x, e.y, 1, 1, flip_x)
+  else
+    draw_spawn_creature(e)
+  end
+end
+
+function draw_spawn_creature(e)
+  if e.spawn_frame_count < 15 then 
+    spr(e.spawn_sprs[1], e.x, e.y, 1, 1)
+  else
+    spr(e.spawn_sprs[2], e.x, e.y, 1, 1)
+  end
+  e.spawn_frame_count += 1
 end
 
 function draw_projectile(e)
