@@ -735,9 +735,10 @@ function update_human(h)
 end
 
 function spawn_creature(c) 
-    if flr(c.spawn_time)+1 <= time() then
-      c.spawned = true
-    end
+  if flr(c.spawn_time)+1 <= time() then
+    c.spawned = true
+  end
+  add(expl_particles, create_expl_particle(c.x, c.y, 0, 0, flr(rnd(3))+1))
 end
 
 function select_target(s)
