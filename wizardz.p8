@@ -316,8 +316,7 @@ function _update()
   ---- gameover ----
   if mode == 2 then
     if btn(4) then
-      mode = 0
-      startscreen_game_timer_exists = false
+      _init()
     end
   end
   ---- diagnostics ----
