@@ -537,8 +537,8 @@ function kill_skeltal(s, wpn)
   sfx(sfx_expl, 2)
   del(skeltals, s)
   del(projectiles, wpn)
-  add_skeltal()
-  add_skeltal()
+  add_human()
+  add_human()
   create_expl_particles(s, wpn)
 end
 
@@ -546,8 +546,8 @@ function kill_human(h, wpn)
   sfx(sfx_expl, 2)
   del(humans, h)
   del(projectiles, wpn)
-  add_human()
-  add_human()
+  add_skeltal()
+  add_skeltal()
   create_expl_particles(h, wpn)
 end
 
