@@ -65,7 +65,9 @@ end
 ---- constants ----
 
 skeltal_sprs = {064, 065}
+skeltal_spawn_sprs = {072, 073}
 human_sprs = {080, 081}
+human_spawn_sprs = {088, 089}
 c_startscreen_timer = "startscreen_timer"
 c_startscreen_timer_countdown_start = 1
 projectile_sprs = {
@@ -220,7 +222,10 @@ function add_human()
     },
     type = 'human',
     sprs = human_sprs,
-    spr = human_sprs[1]
+    spr = human_sprs[1],
+    spawn_sprs = human_spawn_sprs,
+    spawn_time = time(),
+    spawned = false,
   })
 end
 
@@ -234,7 +239,10 @@ function add_skeltal()
     },
     type = 'skeltal',
     sprs = skeltal_sprs,
-    spr = skeltal_sprs[1]
+    spr = skeltal_sprs[1],
+    spawn_sprs = skeltal_spawn_sprs,
+    spawn_time = time(),
+    spawned = false,
   })
 end
 
@@ -484,8 +492,10 @@ end
 function player_skeltal_collision(pl, skeltal)
   local pl_rect = player_rect(pl)
   local skeltal_rect = enemy_rect(skeltal)
-  if intersect(pl_rect, skeltal_rect) then
-    take_damage(pl)
+  if(skeltal.spawned) then
+    if intersect(pl_rect, skeltal_rect) then
+      take_damage(pl)
+    end
   end
 end
 
@@ -661,30 +671,44 @@ function update_entity(e)
 end
 
 function update_skeltal(s)
-  local action = flr(rnd(10))
-  if action <= 8 then
-    target = select_target(s)
-    follow(target, s)
-  elseif action == 9 then
-    s.x = s.x + rnd(2) - 1
-    s.y = s.y + rnd(2) - 1
+  if s.spawned then
+    local action = flr(rnd(10))
+    if action <= 8 then
+      target = select_target(s)
+      follow(target, s)
+    elseif action == 9 then
+      s.x = s.x + rnd(2) - 1
+      s.y = s.y + rnd(2) - 1
+    else
+      -- do nothing
+    end
   else
-    -- do nothing
+    if flr(s.spawn_time)+1 <= time() then
+      s.spawned = true
+    end
   end
 end
 
 function update_human(h)
-  local action = flr(rnd(10))
-  if action <= 8 then
-    target = select_target(h)
-    follow(target, h)
-  elseif action == 9 then
-    h.x = h.x + rnd(2) - 1
-    h.y = h.y + rnd(2) - 1
+  if h.spawned then
+    local action = flr(rnd(10))
+    if action <= 8 then
+      target = select_target(h)
+      follow(target, h)
+    elseif action == 9 then
+      h.x = h.x + rnd(2) - 1
+      h.y = h.y + rnd(2) - 1
+    else
+      -- do nothing
+    end
   else
-    -- do nothing
+    if flr(h.spawn_time)+1 <= time() then
+      h.spawned = true
+    end
   end
 end
+
+----function spawn_
 
 function select_target(s)
   local targets = get_targets(s)
