@@ -664,29 +664,55 @@ function update_expl_particle(particle)
   end
 end
 
+function wpn_hit(wpn, target)
+  return intersect(
+    enemy_rect(target), {
+      wpn.x+1, 
+      wpn.y+2,
+      wpn.x+6, 
+      wpn.y+6
+    }
+  )
+end
+
+function wpn_collision(wpn)
+  printh('in wpn_collision')
+  if wpn.projectile_type == 'fireball' then
+    fireball_collision(wpn)
+  elseif wpn.projectile_type == 'lightning_ball' then
+    lightning_collision(wpn)
+  elseif wpn.projectile_type == 'bone' then
+    ai_wpn_collision(wpn, pl1)
+  elseif wpn.projectile_type == 'star' then
+    ai_wpn_collision(wpn, pl2)
+  else
+    printh('Weapon type not handled')
+  end
+end
+
+function ai_wpn_collision(wpn, pl)
+  if wpn_hit(bone, target) then
+    take_damage(target)
+    create_expl_particles(target, wpn)
+    del(projectiles, wpn)
+  end
+end
+
 function fireball_collision(fireball)
   for i = 1, #skeltals do
     skeltal = skeltals[i]
-    if intersect(
-      enemy_rect(skeltal),
-      {fireball.x+1, fireball.y+2,
-        fireball.x+6, fireball.y+6})
-    then
+    if wpn_hit(fireball, skeltal) then
       kill_skeltal(skeltal, fireball)
       return
     end
   end
 end
 
-function iceball_collision(iceball)
+function lightning_collision(lightning)
   for i = 1, #humans do
     human = humans[i]
-    if intersect(
-      enemy_rect(human),
-      {iceball.x+1, iceball.y+2,
-        iceball.x+6, iceball.y+6})
-    then
-      kill_human(human, iceball)
+    if wpn_hit(lightning, human) then
+      kill_human(human, lightning)
       return
     end
   end
@@ -815,12 +841,7 @@ function update_projectile(f)
     del(projectiles, f)
     return
   end
-  if f.projectile_type == 'fireball' then
-    fireball_collision(f)
-  end
-  if f.projectile_type == 'lightning_ball' then
-    iceball_collision(f)
-  end
+  wpn_collision(f)
 end
 
 function update_bait(b)
