@@ -129,19 +129,7 @@ local startscreen_game_time = nil
 
 function _init()
   reset_diag()
-  pl1 = new_player1()
-  pl2 = new_player2()
-  skeltals = {}
-  humans = {}
-  projectiles = {}
-  expl_particles = {}
-  baits = {}
-  add_skeltal()
-  add_skeltal()
-  add_human()
-  add_human()
   init_startscreen()
-  music(c_song_1)
 end
 
 function new_player1()
@@ -257,6 +245,21 @@ function init_startscreen()
   skull_fx_index = 1
 end
 
+function init_gamescreen()
+  pl1 = new_player1()
+  pl2 = new_player2()
+  skeltals = {}
+  humans = {}
+  projectiles = {}
+  expl_particles = {}
+  baits = {}
+  add_skeltal()
+  add_skeltal()
+  add_human()
+  add_human()
+  music(c_song_1)
+end
+
 function new_projectile(x, y, vel, _type)
   return {
     x = x,
@@ -348,6 +351,7 @@ function create_startscreen_countdown()
     function ()
       mode = 1
       startscreen_game_init = false
+      init_gamescreen()
     end
   )
 end
