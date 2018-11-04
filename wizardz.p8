@@ -67,7 +67,7 @@ end
 skeltal_sprs = {064, 065}
 human_sprs = {080, 081}
 c_startscreen_timer = "startscreen_timer"
-c_startscreen_timer_countdown_start = 3
+c_startscreen_timer_countdown_start = 1
 projectile_sprs = {
   fireball = {128, 129},
   lightning_ball = {132, 133, 134}
@@ -249,7 +249,7 @@ function add_skeltal()
 end
 
 function init_startscreen()
-  mode = 1 ---- startscreen = 0 | gamescreen = 1 ----
+  mode = 0 ---- startscreen = 0 | gamescreen = 1 | gameover = 2 ----
   startscreen_game_timer_exists = false
   startscreen_game_time = time()
   skull_fx_index = 1
@@ -312,6 +312,13 @@ function _update()
     foreach(skeltals, update_entity)
     foreach(humans, update_entity)
     foreach(projectiles, update_entity)
+  end
+  ---- gameover ----
+  if mode == 2 then
+    if btn(4) then
+      mode = 0
+      startscreen_game_timer_exists = false
+    end
   end
   ---- diagnostics ----
   time_after = stat(1)
@@ -468,7 +475,7 @@ function take_damage(pl)
 end
 
 function kill_player(pl)
-  -- todo: player should die
+  mode = 2
 end
 
 function shoot_fireball(x, y, vel, projectile_type)
@@ -769,6 +776,8 @@ function _draw()
     draw_startscreen()
   elseif mode == 1 then
     draw_gamescreen()
+  elseif mode == 2 then
+    draw_gameoverscreen()
   end
   ---- diagnostics ----
   time_after = stat(1)
@@ -809,6 +818,18 @@ function draw_gamescreen()
   foreach(expl_particles, draw_expl_particle)
   draw_manabars()
   draw_healthbars()
+end
+
+function draw_gameoverscreen() 
+  cls()
+  if pl1.health > pl2.health then
+    spr(pl1.pl1_idle[1], 58, 40)
+    print("player 1 wins", 38, 60, 7)
+  else 
+    spr(pl2.pl1_idle[1], 58, 40)
+    print("player 2 wins", 38, 60, 7)
+  end
+  print("press z to continue", 28, 90, 6)
 end
 
 function draw_environment()
