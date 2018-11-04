@@ -1006,7 +1006,7 @@ function draw_gamescreen()
   draw_environment()
   foreach(baits, update_bait_spr)
   foreach(baits, draw_entity)
-  foreach(chests, draw_chest)
+  foreach(chests, draw_entity)
   draw_fences()
   draw_enemies()
   draw_players()
@@ -1014,6 +1014,7 @@ function draw_gamescreen()
   foreach(projectiles, update_projectile_spr)
   foreach(expl_particles, update_expl_particle)
   foreach(expl_particles, draw_expl_particle)
+  foreach(chests, draw_chest_powerup)
   draw_manabars()
   draw_healthbars()
   draw_powerup(pl1)
@@ -1115,9 +1116,7 @@ function update_bait_spr(e)
   e.spr = e.sprs[ceil(e.spr_ix/10)]
 end
 
-function draw_chest(c)
-  spr(c.spr, c.x, c.y)
-
+function draw_chest_powerup(c)
   if c.remove_counter != -1 and (c.remove_counter % 4) > 0 then
     local powerup_sprite
     if c.type == "bait" then
