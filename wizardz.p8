@@ -80,7 +80,8 @@ bait_spr = {
   cat = {66, 67}
 }
 
-chest_spr = 112
+chest_closed_spr = 112
+chest_open_spr = 113
 
 skull_spr = {205}
 skull_fx_sprs = {202, 203, 204}
@@ -263,8 +264,11 @@ function init_gamescreen()
   projectiles = {}
   expl_particles = {}
   baits = {}
+  chests = {}
+
   add_skeltal()
   add_human()
+
   music(c_song_1)
 end
 
@@ -338,10 +342,12 @@ function update_gamescreen()
   count()
   update_player(pl1)
   update_player(pl2)
-  foreach(baits, update_entity)
-  foreach(skeltals, update_entity)
-  foreach(humans, update_entity)
-  foreach(projectiles, update_entity)
+  foreach(chests, update_chest)
+  foreach(baits, update_bait)
+  foreach(skeltals, update_skeltal)
+  foreach(humans, update_human)
+  foreach(projectiles, update_projectile)
+  generate_chests()
 end
 
 function update_gameover()
@@ -372,6 +378,15 @@ function count()
 end
 
 function update_player(pl)
+  update_player_acc(pl)
+  update_player_pos(pl)
+  handle_magic(pl)
+  handle_bait(pl)
+  update_invincibility(pl)
+  player_collisions(pl)
+end
+
+function update_player_acc(pl)
   if btn(0, pl.no) then
     pl.acc.x = -pl_acc
   elseif btn(1, pl.no) then
@@ -401,12 +416,6 @@ function update_player(pl)
   if pl.y >= 104 then
     pl.y = 104
   end
-
-  update_player_pos(pl)
-  handle_magic(pl)
-  handle_bait(pl)
-  update_invincibility(pl)
-  player_collisions(pl)
 end
 
 function handle_magic(pl)
@@ -476,6 +485,24 @@ function clamp_velocity(vel, max_val)
 end
 
 function player_collisions(pl)
+  player_chest_collisions(pl)
+  player_enemy_collisions(pl)
+end
+
+function player_chest_collisions(pl)
+  for chest in all(chests) do
+    if intersect(player_rect(pl), chest_rect(chest)) then
+      pickup_chest(pl, chest)
+    end
+  end
+end
+
+function pickup_chest(pl, chest)
+  chest.spr = chest_open_spr
+  chest.remove_counter = 40
+end
+
+function player_enemy_collisions(pl)
   if pl.invincibility_counter == 0 then
     if pl.projectile_type == 'fireball' then
       for skeltal in all(skeltals) do
@@ -647,6 +674,13 @@ function player_rect(pl)
   }
 end
 
+function chest_rect(c)
+  return {
+    c.x+0, c.y+3,
+    c.x+7, c.y+7
+  }
+end
+
 function intersect(rect1,rect2)
   return
     intersect_intervals(rect1[1], rect1[3], rect2[1], rect2[3])
@@ -658,15 +692,11 @@ function intersect_intervals(a_lo, a_hi, b_lo, b_hi)
   return a_lo < b_hi and a_hi > b_lo
 end
 
-function update_entity(e)
-  if e.type == "skeltal" then
-    update_skeltal(e)
-  elseif e.type == "human" then
-    update_human(e)
-  elseif e.type == "projectile" then
-    update_projectile(e)
-  elseif e.type == "bait" then
-    update_bait(e)
+function update_chest(c)
+  if c.remove_counter > 0 then
+    c.remove_counter -= 1
+  elseif c.remove_counter == 0 then
+    del(chests, c)
   end
 end
 
@@ -814,6 +844,23 @@ function restart_timer(name, start_paused)
   timer.active = not start_paused
 end
 
+function generate_chests()
+  if #chests < 3 and rnd(200) < 1 then
+    new_chest()
+  end
+end
+
+chest_types = {"trap"}
+function new_chest()
+  add(chests, {
+    x = rnd(104)+8,
+    y = rnd(72)+32,
+    remove_counter = -1,
+    type = chest_types[flr(rnd(#chest_types))+1],
+    spr = chest_closed_spr
+  })
+end
+
 ---- draw ----
 
 function _draw()
@@ -867,6 +914,7 @@ function draw_gamescreen()
   draw_environment()
   foreach(baits, update_bait_spr)
   foreach(baits, draw_entity)
+  foreach(chests, draw_entity)
   draw_fences()
   draw_enemies()
   draw_players()
@@ -883,7 +931,7 @@ function draw_gameoverscreen()
   if pl1.health > pl2.health then
     spr(pl1.pl1_idle[1], 58, 40)
     print("player 1 wins", 38, 60, 7)
-  else 
+  else
     spr(pl2.pl1_idle[1], 58, 40)
     print("player 2 wins", 38, 60, 7)
   end
@@ -1249,14 +1297,14 @@ __gfx__
 56784410000000000000000000000000525552505255525000000000000000000000000000000000000000000000000000000000000000000000000000000000
 77624100000000000000000000000000225552202255522000000000000000000000000000000000000000000000000000000000000000000000000000000000
 57510000000000000000000000000000008080000080800000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000008880000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000088dfd000088800000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0944444000000000000000000000000008ffff00088dfd0000000000000000000000000000000000000000000000000000000000000000000000000000000000
-9444444400000000000000000000000000ff000008ffff0000000000000000000000000000000000000000000000000000000000000000000000000000000000
-111aa11100000000000000000000000000ffff0000ffff0000000000000000000000000000000000000000000000000000000000000000000000000000000000
-444a94440000000000000000000000000034b0000034b00000000000000000000000000000000000000000000000000000000000000000000000000000000000
-5444444500000000000000000000000000b3400000b3400000000000000000000000000000000000000000000000000000000000000000000000000000000000
-15555551000000000000000000000000003030000030300000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000011991100000000000000000008880000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000112222110000000000000000088dfd000088800000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0944444012222221000000000000000008ffff00088dfd0000000000000000000000000000000000000000000000000000000000000000000000000000000000
+9444444412222221000000000000000000ff000008ffff0000000000000000000000000000000000000000000000000000000000000000000000000000000000
+111aa11144422444000000000000000000ffff0000ffff0000000000000000000000000000000000000000000000000000000000000000000000000000000000
+444a94444444444400000000000000000034b0000034b00000000000000000000000000000000000000000000000000000000000000000000000000000000000
+5444444554444445000000000000000000b3400000b3400000000000000000000000000000000000000000000000000000000000000000000000000000000000
+15555551155555510000000000000000003030000030300000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000c0c000c0c0c000000cc00000000000000000000000000000000000000000000000000000000000000000000000000
 00009990000099900000000000000000ccc0777000c0777000c07770000000000000000000000000000000000000000000000000000000000000000000000000
 00aaa779800aa7790000000000000000000cc777c00cc777cc0cc777000000000000000000000000000000000000000000000000000000000000000000000000
