@@ -600,7 +600,9 @@ function check_dead(pl)
 end
 
 function death_scene(e)
+  cols = {8, 9, 10}
   spr(death_fire[death_counter], e.x, e.y, 1, 1, death_fire_flip)
+  add(expl_particles, create_expl_particle(e.x + 4, e.y + 4, 0, -1, cols[flr(rnd(3))+1]))
   --[[ death_counter += 1 ]]
   if anim_count % 5 == 0 then
     death_fire_flip = not death_fire_flip
