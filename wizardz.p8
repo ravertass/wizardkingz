@@ -450,8 +450,14 @@ end
 
 function player_collisions(pl)
   if pl.invincibility_counter == 0 then
-    for skeltal in all(skeltals) do
-      player_skeltal_collision(pl, skeltal)
+    if pl.projectile_type == 'fireball' then
+      for skeltal in all(skeltals) do
+        player_skeltal_collision(pl, skeltal)
+      end
+    else
+      for human in all(humans) do
+        player_skeltal_collision(pl, human)
+      end
     end
   end
 end
