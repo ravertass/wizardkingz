@@ -73,15 +73,18 @@ end
 ---- constants ----
 
 skeltal_sprs = {064, 065}
+skeltal_ranged_sprs = {068, 069}
 skeltal_spawn_sprs = {072, 073}
 human_sprs = {080, 081}
+human_ranged_sprs = {084, 085}
 human_spawn_sprs = {088, 089}
 c_startscreen_timer = "startscreen_timer"
 c_startscreen_timer_countdown_start = 1
 c_original_max_mana = 30
 projectile_sprs = {
   fireball = {128, 129},
-  lightning_ball = {132, 133, 134}
+  lightning_ball = {132, 133, 134},
+  bone = {070, 071}
 }
 
 bait_spr = {
@@ -252,12 +255,34 @@ function add_human()
       y = 0
     },
     type = 'human',
+    attack_type = 'melee',
     sprs = human_sprs,
     spr = human_sprs[1],
     spawn_sprs = human_spawn_sprs,
     spawn_time = time(),
     spawned = false,
     spawn_frame_count = 1,
+    last_projectile = time()
+  })
+end
+
+function add_human_ranged()
+  add(humans, {
+    x = rnd(104)+8,
+    y = rnd(72)+32,
+    vel = {
+      x = 0,
+      y = 0
+    },
+    type = 'human',
+    attack_type = 'ranged',
+    sprs = human_ranged_sprs,
+    spr = human_ranged_sprs[1],
+    spawn_sprs = human_spawn_sprs,
+    spawn_time = time(),
+    spawned = false,
+    spawn_frame_count = 1,
+    last_projectile = time()
   })
 end
 
@@ -270,12 +295,34 @@ function add_skeltal()
       y = 0
     },
     type = 'skeltal',
+    attack_type = 'melee',
     sprs = skeltal_sprs,
     spr = skeltal_sprs[1],
     spawn_sprs = skeltal_spawn_sprs,
     spawn_time = time(),
     spawned = false,
     spawn_frame_count = 1,
+    last_projectile = time()
+  })
+end
+
+function add_skeltal_ranged()
+  add(skeltals, {
+    x = rnd(104)+8,
+    y = rnd(72)+32,
+    vel = {
+      x = 0,
+      y = 0
+    },
+    type = 'skeltal',
+    attack_type = 'ranged',
+    sprs = skeltal_ranged_sprs,
+    spr = skeltal_ranged_sprs[1],
+    spawn_sprs = skeltal_spawn_sprs,
+    spawn_time = time(),
+    spawned = false,
+    spawn_frame_count = 1,
+    last_projectile = time()
   })
 end
 
@@ -292,11 +339,12 @@ function init_gamescreen()
   skeltals = {}
   humans = {}
   projectiles = {}
+  creature_projectiles = {}
   expl_particles = {}
   baits = {}
   chests = {}
 
-  add_skeltal()
+  add_skeltal_ranged()
   add_human()
 
   music(c_song_1)
@@ -315,6 +363,19 @@ function new_projectile(x, y, vel, _type)
     size_dx = 1,
     flip_x = false,
     flip_y = false
+  }
+end
+
+function new_creature_projectile(x, y, dir, speed, _type)
+  return {
+    x = x,
+    y = y,
+    dir = dir,
+    type = "projectile",
+    projectile_type = _type,
+    spr = projectile_sprs[_type][1],
+    spr_ix = 1,
+    speed = speed,
   }
 end
 
@@ -374,9 +435,10 @@ function update_gamescreen()
   update_player(pl2)
   foreach(chests, update_chest)
   foreach(baits, update_bait)
-  foreach(skeltals, update_skeltal)
-  foreach(humans, update_human)
+  foreach(skeltals, update_enemy)
+  foreach(humans, update_enemy)
   foreach(projectiles, update_projectile)
+  foreach(creature_projectiles, update_creature_projectile)
   generate_chests()
 end
 
@@ -637,18 +699,18 @@ function leave_bait(pl)
 end
 
 function follow(target, e)
-  world_size = 128
-  norm_x=(target.x-e.x)/world_size
-  norm_y=(target.y-e.y)/world_size
+  local world_size = 128
+  local norm_x=(target.x-e.x)/world_size
+  local norm_y=(target.y-e.y)/world_size
   e.dir=atan2(norm_x,norm_y)
   move(e)
 end
 
 function move(e)
-  max_speed = 0.4
-  speed = rnd(max_speed)
-  dx=cos(e.dir)*speed
-  dy=sin(e.dir)*speed
+  local max_speed = 0.4
+  local speed = rnd(max_speed)
+  local dx=cos(e.dir)*speed
+  local dy=sin(e.dir)*speed
   e.vel.x = dx
   e.vel.y = dy
   e.x += dx
@@ -729,7 +791,7 @@ function wpn_collision(wpn)
   elseif wpn.projectile_type == 'lightning_ball' then
     lightning_collision(wpn)
   elseif wpn.projectile_type == 'bone' then
-    ai_wpn_collision(wpn, pl1)
+    --ai_wpn_collision(wpn, pl1)
   elseif wpn.projectile_type == 'star' then
     ai_wpn_collision(wpn, pl2)
   else
@@ -805,38 +867,43 @@ function update_chest(c)
   end
 end
 
-function update_skeltal(s)
-  if s.spawned then
+function update_enemy(e)
+  if e.spawned then
     local action = flr(rnd(10))
-    if action <= 8 then
-      target = select_target(s)
-      follow(target, s)
-    elseif action == 9 then
-      s.x = s.x + rnd(2) - 1
-      s.y = s.y + rnd(2) - 1
-    else
-      -- do nothing
+    if e.attack_type == 'melee' then
+      if action <= 8 then
+        target = select_target(e)
+        follow(target, e)
+      elseif action == 9 then
+        e.x = e.x + rnd(2) - 1
+        e.y = e.y + rnd(2) - 1
+      else
+        -- do nothing
+      end
+    elseif e.attack_type == 'ranged' then
+      if action <= 1 and e.last_projectile + 2 < time() then
+        e.last_projectile = time()
+        add_creature_projectile(e, 'bone')
+      elseif action <= 5 then
+        target = select_target(e)
+        follow(target, e)
+      elseif action == 9 then
+        e.x = e.x + rnd(2) - 1
+        e.y = e.y + rnd(2) - 1
+      else
+        -- do nothing
+      end
     end
   else
-    spawn_creature(s)
+    spawn_creature(e)
   end
 end
 
-function update_human(h)
-  if h.spawned then
-    local action = flr(rnd(10))
-    if action <= 8 then
-      target = select_target(h)
-      follow(target, h)
-    elseif action == 9 then
-      h.x = h.x + rnd(2) - 1
-      h.y = h.y + rnd(2) - 1
-    else
-      -- do nothing
-    end
-  else
-    spawn_creature(h)
-  end
+function update_creature_projectile(e)
+  local dx=cos(e.dir)*e.speed
+  local dy=sin(e.dir)*e.speed
+  e.x += dx
+  e.y += dy 
 end
 
 function spawn_creature(c) 
@@ -846,6 +913,20 @@ function spawn_creature(c)
   if c.spawn_frame_count % 5 == 0 then
     add(expl_particles, create_expl_particle(c.x, c.y, 0, 0, flr(rnd(3))+1))
   end
+end
+
+function add_creature_projectile(c, type)
+  local target
+  if type == 'bone' then
+    target = pl1
+  else 
+    target = pl2
+  end
+  local world_size = 128
+  local norm_x=(target.x-c.x)/world_size
+  local norm_y=(target.y-c.y)/world_size
+  local dir = atan2(norm_x,norm_y)
+  add(creature_projectiles, new_creature_projectile(c.x, c.y, dir, 2, type))
 end
 
 function select_target(s)
@@ -1021,6 +1102,8 @@ function draw_gamescreen()
   draw_fences()
   draw_enemies()
   draw_players()
+  foreach(creature_projectiles, draw_entity)
+  foreach(creature_projectiles, update_projectile_spr)
   foreach(projectiles, draw_entity)
   foreach(projectiles, update_projectile_spr)
   foreach(expl_particles, update_expl_particle)
@@ -1098,24 +1181,32 @@ function update_spr(e)
 end
 
 function update_projectile_spr(e)
-  e.spr_ix += 1
-  if e.spr_ix > #(projectile_sprs[e.projectile_type]) then
-    e.spr_ix = 1
-  end
+  if e.projectile_type == 'bone' or e.projectile_type == 'star' then
+    e.spr = projectile_sprs[e.projectile_type][ceil(e.spr_ix/5)]
+    e.spr_ix += 1
+    if e.spr_ix > 9 then
+      e.spr_ix = 1
+    end
+  else
+    e.spr_ix += 1
+    if e.spr_ix > #(projectile_sprs[e.projectile_type]) then
+      e.spr_ix = 1
+    end
 
-  e.flip_x = e.vel.x < 0
-  e.flip_y = e.vel.y < 0
-  e.spr = projectile_sprs[e.projectile_type][e.spr_ix]
-  if e.vel.x == 0 then
-    e.spr += 16
-  elseif e.vel.x != 0 and e.vel.y != 0 then
-    e.spr += 32
-  end
-  e.size += e.size_dx
-  if e.size >= 10 then
-    e.size_dx = -1
-  elseif e.size <= 7 then
-    e.size_dx = 1
+    e.flip_x = e.vel.x < 0
+    e.flip_y = e.vel.y < 0
+    e.spr = projectile_sprs[e.projectile_type][e.spr_ix]
+    if e.vel.x == 0 then
+      e.spr += 16
+    elseif e.vel.x != 0 and e.vel.y != 0 then
+      e.spr += 32
+    end
+    e.size += e.size_dx
+    if e.size >= 10 then
+      e.size_dx = -1
+    elseif e.size <= 7 then
+      e.size_dx = 1
+    end
   end
 end
 
@@ -1227,13 +1318,17 @@ function draw_spawn_creature(e)
 end
 
 function draw_projectile(e)
-  spr_x = flr(e.spr % 16) * 8
-  spr_y = flr(e.spr / 16) * 8
-  pos_x = e.x - ((e.size - 8) / 2)
-  pos_y = e.y - ((e.size - 8) / 2)
-  sspr(spr_x, spr_y, 8, 8, pos_x, pos_y, e.size, e.size, e.flip_x, e.flip_y)
-  for i = 0, 5 do
-    add_particle(e)
+  if e.projectile_type == 'bone' or e.projectile_type == 'star' then
+    spr(e.spr, e.x, e.y)
+  else
+    spr_x = flr(e.spr % 16) * 8
+    spr_y = flr(e.spr / 16) * 8
+    pos_x = e.x - ((e.size - 8) / 2)
+    pos_y = e.y - ((e.size - 8) / 2)
+    sspr(spr_x, spr_y, 8, 8, pos_x, pos_y, e.size, e.size, e.flip_x, e.flip_y)
+    for i = 0, 5 do
+      add_particle(e)
+    end
   end
 end
 
