@@ -402,7 +402,7 @@ end
 ---- update ----
 
 function _update()
-  do_pre_diagnostics()
+--  do_pre_diagnostics()
   if mode == 0 then
     update_startscreen()
   elseif mode == 1 then
@@ -410,7 +410,7 @@ function _update()
   elseif mode == 2 then
     update_gameover()
   end
-  do_post_diagnostics()
+--  do_post_diagnostics()
 end
 
 function do_pre_diagnostics()
