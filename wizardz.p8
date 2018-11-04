@@ -169,7 +169,7 @@ end
 function new_player1()
   return {
     type = 'player',
-    x = 10,
+    x = 20,
     y = 32,
     spr = 011,
     spr_ix = 1,
