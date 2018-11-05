@@ -849,7 +849,6 @@ function wpn_hit(wpn, target)
 end
 
 function wpn_collision(wpn)
-  printh('in wpn_collision')
   if wpn.projectile_type == 'fireball' then
     fireball_collision(wpn)
   elseif wpn.projectile_type == 'lightning_ball' then
