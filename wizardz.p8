@@ -1124,7 +1124,7 @@ end
 
 function _draw()
   ---- diagnostics ----
-  time_before = stat(1)
+  --time_before = stat(1)
   ---- startscreen ----
   if mode == 0 then
     draw_startscreen()
@@ -1134,8 +1134,8 @@ function _draw()
     draw_gameoverscreen()
   end
   ---- diagnostics ----
-  time_after = stat(1)
-  log_perf("draw", time_before, time_after)
+  --time_after = stat(1)
+  --log_perf("draw", time_before, time_after)
 end
 
 function draw_startscreen()
