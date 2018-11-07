@@ -144,6 +144,8 @@ c_bait_lifetime = 150
 anim_count = 0
 c_max_health = 100
 
+c_loser_no = -1
+
 ---- environment ----
 fence_sprs = {192, 193, 194, 195, 211}
 house_sprs = {208, 209, 210}
@@ -343,6 +345,7 @@ end
 function init_gamescreen()
   pl1 = new_player1()
   pl2 = new_player2()
+  c_loser_no = -1
   skeltals = {}
   humans = {}
   projectiles = {}
@@ -678,6 +681,9 @@ function take_damage(pl)
   pl.health = max(pl.health - 20, 0)
   if pl.health <= 0 then
     pl.dead = true
+    if c_loser_no == -1 then
+      c_loser_no = pl.no
+    end
   end
   pl.invincibility_counter = 30
 end
@@ -1215,7 +1221,7 @@ end
 
 function draw_gameoverscreen()
   cls()
-  if pl1.health > pl2.health then
+  if c_loser_no == pl2.no then
     spr(pl1.pl1_idle[1], 58, 40)
     print("player 1 wins", 38, 60, 7)
   else
